@@ -1,0 +1,141 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   ESTILOS PERSONALIZADOS Y ANIMACIONES DE BEESENSE IoT
+   ========================================================================== */
+
+@keyframes honeycombShift {
+  0% {
+    background-position: 0px 0px, 0px 0px, 0% 50%;
+  }
+  50% {
+    background-position: 56px 32px, -28px 16px, 100% 50%;
+  }
+  100% {
+    background-position: 112px 64px, -56px 32px, 0% 50%;
+  }
+}
+
+@keyframes cellGlow {
+  0%, 100% {
+    opacity: 0.15;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 0.65;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes beeFlightPath1 {
+  0% {
+    transform: translate(-10vw, 72vh) rotate(18deg) scale(0.95);
+  }
+  25% {
+    transform: translate(26vw, 48vh) rotate(-8deg) scale(1.05);
+  }
+  50% {
+    transform: translate(62vw, 62vh) rotate(14deg) scale(1);
+  }
+  75% {
+    transform: translate(84vw, 28vh) rotate(-12deg) scale(0.92);
+  }
+  100% {
+    transform: translate(112vw, 18vh) rotate(10deg) scale(0.95);
+  }
+}
+
+@keyframes beeFlightPath2 {
+  0% {
+    transform: translate(110vw, 24vh) rotate(-165deg) scale(0.85);
+  }
+  30% {
+    transform: translate(74vw, 44vh) rotate(-190deg) scale(0.95);
+  }
+  65% {
+    transform: translate(32vw, 22vh) rotate(-170deg) scale(0.9);
+  }
+  100% {
+    transform: translate(-12vw, 42vh) rotate(-180deg) scale(0.85);
+  }
+}
+
+@keyframes beeFlightPath3 {
+  0% {
+    transform: translate(18vw, 108vh) rotate(-35deg) scale(0.8);
+  }
+  35% {
+    transform: translate(42vw, 72vh) rotate(-15deg) scale(0.9);
+  }
+  70% {
+    transform: translate(78vw, 54vh) rotate(-40deg) scale(0.85);
+  }
+  100% {
+    transform: translate(96vw, -12vh) rotate(-25deg) scale(0.8);
+  }
+}
+
+@keyframes beeFloatLocal {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(6deg);
+  }
+}
+
+@keyframes wingFlutter {
+  0%, 100% {
+    transform: scaleY(1) rotate(4deg);
+  }
+  50% {
+    transform: scaleY(0.55) rotate(-12deg);
+  }
+}
+
+@keyframes criticalCardBlink {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.35), 0 0 0 2px rgba(239, 68, 68, 0.65);
+  }
+  50% {
+    opacity: 0.42;
+    box-shadow: 0 10px 30px 4px rgba(239, 68, 68, 0.65), 0 0 0 4px rgba(239, 68, 68, 0.95);
+  }
+}
+
+.honeycomb-animated-bg {
+  background-color: #c5912b;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='98' viewBox='0 0 56 98'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%23996c14' fill-opacity='0.28'%3E%3Cpath d='M28 66L0 50L0 16L28 0L56 16L56 50L28 66L28 100' fill='none' stroke='%2391640f' stroke-width='1.6' stroke-opacity='0.38'/%3E%3Cpath d='M28 0L28 34L0 50L0 84L28 100L56 84L56 50L28 34' fill='none' stroke='%23e8b94f' stroke-width='1.2' stroke-opacity='0.28'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
+    radial-gradient(circle at 20% 80%, rgba(120, 83, 14, 0.45) 0%, transparent 50%),
+    linear-gradient(135deg, #d7a53c 0%, #bf8c28 48%, #a6761a 100%);
+  animation: honeycombShift 26s linear infinite;
+}
+
+.bee-flight-1 {
+  animation: beeFlightPath1 19s ease-in-out infinite;
+}
+
+.bee-flight-2 {
+  animation: beeFlightPath2 23s ease-in-out infinite;
+}
+
+.bee-flight-3 {
+  animation: beeFlightPath3 17s ease-in-out infinite;
+}
+
+.bee-hover-float {
+  animation: beeFloatLocal 3.2s ease-in-out infinite;
+}
+
+.bee-wing {
+  transform-origin: center bottom;
+  animation: wingFlutter 0.14s ease-in-out infinite;
+}
+
+.critical-blink-alert {
+  animation: criticalCardBlink 1.1s ease-in-out infinite;
+}
