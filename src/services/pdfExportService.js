@@ -4,7 +4,8 @@
  * ============================================================================
  * - Incluye el logotipo oficial de BeeSense en su resolución nativa (644x197 px)
  *   respetando su proporción exacta (3.269:1) y alineación vertical/horizontal.
- * - Incluye resumen de filtros aplicados y tabla cronológica de eventos.
+ * - Incluye la columna "Nombre de Colmenar" ("Colmenar Principal - Sede PAO")
+ *   en la grilla de datos del reporte PDF.
  */
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -35,9 +36,8 @@ export function exportEventsToPDF(events, filters = {}) {
   doc.setFillColor(255, 255, 255);
   doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 3, 3, 'F');
 
-  // Cálculo exacto de dimensiones de imagen manteniendo la relación de aspecto nativa (3.269:1)
   const logoMaxW = 58;
-  const logoH = Number((logoMaxW / (BEESENSE_LOGO_ASPECT_RATIO || 3.269)).toFixed(2)); // ~17.74 mm
+  const logoH = Number((logoMaxW / (BEESENSE_LOGO_ASPECT_RATIO || 3.269)).toFixed(2));
   const logoX = badgeX + (badgeW - logoMaxW) / 2;
   const logoY = badgeY + (badgeH - logoH) / 2;
 
@@ -62,7 +62,7 @@ export function exportEventsToPDF(events, filters = {}) {
   doc.setFontSize(9.5);
   doc.setTextColor(203, 213, 225);
   doc.text(
-    `Colmenar: Colmenar Principal - Sector Norte   |   Fecha de emisión: ${formatDateTimeCL(new Date())}`,
+    `Colmenar: Colmenar Principal - Sede PAO   |   Fecha de emisión: ${formatDateTimeCL(new Date())}`,
     textStartX,
     21.5
   );
@@ -84,9 +84,10 @@ export function exportEventsToPDF(events, filters = {}) {
     28.5
   );
 
-  // 6. Construcción de filas de la tabla
+  // 6. Construcción de filas de la tabla incluyendo la columna "Nombre de Colmenar"
   const tableRows = events.map((ev, index) => [
     index + 1,
+    ev.nombreColmenar || 'Colmenar Principal - Sede PAO',
     ev.tipoEvento || 'N/A',
     ev.titulo || ev.tipoEvento,
     ev.detalle || '-',
@@ -98,6 +99,7 @@ export function exportEventsToPDF(events, filters = {}) {
     startY: 42,
     head: [[
       '#',
+      'Nombre de Colmenar',
       'Categoría',
       'Evento',
       'Descripción Detallada',
@@ -107,28 +109,37 @@ export function exportEventsToPDF(events, filters = {}) {
     body:
       tableRows.length > 0
         ? tableRows
-        : [['-', 'SIN REGISTROS', 'No existen eventos para los filtros seleccionados', '-', '-', '-']],
+        : [[
+            '-',
+            'Colmenar Principal - Sede PAO',
+            'SIN REGISTROS',
+            'No existen eventos para los filtros seleccionados',
+            '-',
+            '-',
+            '-',
+          ]],
     theme: 'grid',
     headStyles: {
       fillColor: [18, 43, 82],
       textColor: [255, 255, 255],
       fontStyle: 'bold',
-      fontSize: 9.5,
+      fontSize: 9,
     },
     bodyStyles: {
-      fontSize: 9,
+      fontSize: 8.5,
       textColor: [30, 41, 59],
     },
     alternateRowStyles: {
       fillColor: [244, 247, 251],
     },
     columnStyles: {
-      0: { cellWidth: 12, halign: 'center' },
-      1: { cellWidth: 42, fontStyle: 'bold' },
-      2: { cellWidth: 45 },
-      3: { cellWidth: 78 },
-      4: { cellWidth: 46 },
-      5: { cellWidth: 46 },
+      0: { cellWidth: 10, halign: 'center' },
+      1: { cellWidth: 46, fontStyle: 'bold' },
+      2: { cellWidth: 34, fontStyle: 'bold' },
+      3: { cellWidth: 38 },
+      4: { cellWidth: 63 },
+      5: { cellWidth: 39 },
+      6: { cellWidth: 39 },
     },
     didDrawPage: (data) => {
       const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();

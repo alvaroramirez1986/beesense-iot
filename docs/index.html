@@ -410,7 +410,17 @@
               const id = `EVT-${Date.now()}-${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
               activeEventsRef.current[cat] = id;
               setEvents((prev) => [
-                { id, tipoEvento: cat, titulo, detalle, fechaInicio: nowFmt, fechaTermino: 'En curso (Activa)', isoDate, horaInicio24 },
+                {
+                  id,
+                  nombreColmenar: 'Colmenar Principal - Sede PAO',
+                  tipoEvento: cat,
+                  titulo,
+                  detalle,
+                  fechaInicio: nowFmt,
+                  fechaTermino: 'En curso (Activa)',
+                  isoDate,
+                  horaInicio24,
+                },
                 ...prev,
               ]);
             } else if (!isActive && activeId) {
@@ -492,7 +502,7 @@
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(9.5);
           doc.setTextColor(203, 213, 225);
-          doc.text(`Colmenar: Colmenar Principal - Sector Norte   |   Fecha de emisión: ${formatDateTimeCL(new Date())}`, textStartX, 21.5);
+          doc.text(`Colmenar: Colmenar Principal - Sede PAO   |   Fecha de emisión: ${formatDateTimeCL(new Date())}`, textStartX, 21.5);
 
           const horarioStr = rangoHorarioActivo ? `${horaDesde} a ${horaHasta} hrs` : 'Día completo';
           doc.setTextColor(245, 158, 11);
@@ -502,6 +512,7 @@
 
           const rows = filteredEvents.map((e, i) => [
             i + 1,
+            e.nombreColmenar || 'Colmenar Principal - Sede PAO',
             e.tipoEvento,
             e.titulo,
             e.detalle,
@@ -510,8 +521,8 @@
           ]);
           doc.autoTable({
             startY: 42,
-            head: [['#', 'Tipo Evento', 'Título', 'Detalle', 'Fecha/Hora Inicio', 'Fecha/Hora Término']],
-            body: rows.length ? rows : [['-', 'SIN DATOS', 'No existen eventos para los filtros seleccionados', '-', '-', '-']],
+            head: [['#', 'Nombre de Colmenar', 'Tipo Evento', 'Título', 'Detalle', 'Fecha/Hora Inicio', 'Fecha/Hora Término']],
+            body: rows.length ? rows : [['-', 'Colmenar Principal - Sede PAO', 'SIN DATOS', 'No existen eventos para los filtros seleccionados', '-', '-', '-']],
             headStyles: { fillColor: [18, 43, 82], textColor: [255, 255, 255] },
           });
           doc.save('BeeSense_Reporte_Eventos_2026.pdf');
@@ -780,7 +791,7 @@
                           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#122B52] dark:text-white">
                             Monitoreo en Tiempo Real
                           </h1>
-                          <p className="text-sm text-slate-500">Colmenar Principal - Sector Norte</p>
+                          <p className="text-sm text-slate-500">Colmenar Principal - Sede PAO</p>
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2.5">
@@ -1080,23 +1091,42 @@
                         </div>
                       </div>
 
-                      <div className="bg-white dark:bg-slate-900 rounded-2xl divide-y dark:divide-slate-800 border border-slate-100 dark:border-slate-800">
-                        {filteredEvents.length === 0 ? (
-                          <p className="p-8 text-center text-sm text-slate-400">Sin eventos registrados para los filtros seleccionados.</p>
-                        ) : (
-                          filteredEvents.map((ev) => (
-                            <div key={ev.id} className="p-4 flex flex-wrap justify-between items-center gap-2">
-                              <div>
-                                <p className="font-extrabold text-sm text-[#122B52] dark:text-white">{ev.titulo} ({ev.tipoEvento})</p>
-                                <p className="text-xs text-slate-500">{ev.detalle}</p>
+                      <div className="bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-800">
+                        <div className="hidden md:grid md:grid-cols-12 gap-4 px-5 py-3 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                          <div className="col-span-3">Nombre de Colmenar</div>
+                          <div className="col-span-4">Evento y Detalle</div>
+                          <div className="col-span-2">Categoría</div>
+                          <div className="col-span-3 text-right">Inicio / Término</div>
+                        </div>
+                        <div className="divide-y dark:divide-slate-800">
+                          {filteredEvents.length === 0 ? (
+                            <p className="p-8 text-center text-sm text-slate-400">Sin eventos registrados para los filtros seleccionados.</p>
+                          ) : (
+                            filteredEvents.map((ev) => (
+                              <div key={ev.id} className="p-4 sm:px-5 grid grid-cols-1 md:grid-cols-12 gap-3 items-center hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
+                                <div className="md:col-span-3">
+                                  <span className="md:hidden text-[10px] font-bold uppercase text-slate-400 block mb-0.5">Nombre de Colmenar</span>
+                                  <span className="inline-flex items-center gap-1.5 font-bold text-xs text-[#122B52] dark:text-amber-300 bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/50 px-2.5 py-1 rounded-lg">
+                                    🐝 {ev.nombreColmenar || 'Colmenar Principal - Sede PAO'}
+                                  </span>
+                                </div>
+                                <div className="md:col-span-4">
+                                  <p className="font-extrabold text-sm text-[#122B52] dark:text-white">{ev.titulo}</p>
+                                  <p className="text-xs text-slate-500">{ev.detalle}</p>
+                                </div>
+                                <div className="md:col-span-2">
+                                  <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                                    {ev.tipoEvento}
+                                  </span>
+                                </div>
+                                <div className="md:col-span-3 md:text-right text-xs font-semibold flex flex-wrap md:justify-end gap-1.5">
+                                  <span className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800">Inicio: {ev.fechaInicio}</span>
+                                  <span className="px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300">Término: {ev.fechaTermino}</span>
+                                </div>
                               </div>
-                              <div className="text-xs font-semibold space-x-2">
-                                <span className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800">Inicio: {ev.fechaInicio}</span>
-                                <span className="px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300">Término: {ev.fechaTermino}</span>
-                              </div>
-                            </div>
-                          ))
-                        )}
+                            ))
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}

@@ -11,6 +11,7 @@ import {
   Clock,
   CheckCircle2,
   Zap,
+  MapPin,
 } from 'lucide-react';
 import { exportEventsToPDF } from '../services/pdfExportService';
 import { getEventTimeHHMM } from '../services/awsApiService';
@@ -93,26 +94,26 @@ export default function ReportsView({ events = [] }) {
     switch (type) {
       case 'TEMPERATURA':
         return (
-          <div className="w-11 h-11 rounded-2xl bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">
             <Thermometer className="w-5 h-5" />
           </div>
         );
       case 'ESTADO DE TAPADA':
         return (
-          <div className="w-11 h-11 rounded-2xl bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
             <ShieldAlert className="w-5 h-5" />
           </div>
         );
       case 'ESTADO DE BATERIA':
         return (
-          <div className="w-11 h-11 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
             <BatteryWarning className="w-5 h-5" />
           </div>
         );
       case 'N/A':
       default:
         return (
-          <div className="w-11 h-11 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0">
             <WifiOff className="w-5 h-5" />
           </div>
         );
@@ -149,7 +150,6 @@ export default function ReportsView({ events = [] }) {
           ==================================================================== */}
       <div className="rounded-[22px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 sm:p-6 shadow-xs space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-          {/* Etiqueta principal depurada (sin mención a DynamoDB) */}
           <div className="md:col-span-3 flex items-center gap-2.5 pb-2">
             <Calendar className="w-5 h-5 text-amber-500 shrink-0" />
             <span className="text-sm font-extrabold text-[#122B52] dark:text-white block">
@@ -157,7 +157,6 @@ export default function ReportsView({ events = [] }) {
             </span>
           </div>
 
-          {/* Selector Tipo de Evento (Lista desplegable de 5 ítems) */}
           <div className="md:col-span-3">
             <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">
               Tipo de Evento
@@ -178,7 +177,6 @@ export default function ReportsView({ events = [] }) {
             </div>
           </div>
 
-          {/* Fecha Desde */}
           <div className="md:col-span-2">
             <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">
               Desde
@@ -191,7 +189,6 @@ export default function ReportsView({ events = [] }) {
             />
           </div>
 
-          {/* Fecha Hasta */}
           <div className="md:col-span-2">
             <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">
               Hasta
@@ -204,7 +201,6 @@ export default function ReportsView({ events = [] }) {
             />
           </div>
 
-          {/* Botón Limpiar Filtros */}
           <div className="md:col-span-2">
             <button
               type="button"
@@ -217,9 +213,7 @@ export default function ReportsView({ events = [] }) {
           </div>
         </div>
 
-        {/* ==================================================================
-            FILTRO OPCIONAL POR RANGO HORARIO (ACTIVACIÓN MANUAL POR EL USUARIO)
-            ================================================================== */}
+        {/* Filtro Opcional por Rango Horario (Activación manual) */}
         <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <button
@@ -288,9 +282,10 @@ export default function ReportsView({ events = [] }) {
       </div>
 
       {/* ====================================================================
-          LISTADO CRONOLÓGICO DE EVENTOS (Figura 3 - Mobile & Escritorio)
+          GRILLA DE DATOS DE EVENTOS (CON COLUMNA "NOMBRE DE COLMENAR")
+          Adaptada para Escritorio (Tabla/Grilla estructurada) y Mobile
           ==================================================================== */}
-      <div className="rounded-[24px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xs divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
+      <div className="rounded-[24px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xs overflow-hidden">
         {filteredEvents.length === 0 ? (
           <div className="p-12 text-center space-y-2">
             <p className="text-base font-bold text-slate-600 dark:text-slate-300">
@@ -301,48 +296,82 @@ export default function ReportsView({ events = [] }) {
             </p>
           </div>
         ) : (
-          filteredEvents.map((ev) => (
-            <div
-              key={ev.id}
-              className="p-4 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
-            >
-              <div className="flex items-start sm:items-center gap-4">
-                {renderEventIcon(ev.tipoEvento)}
-
-                <div className="space-y-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-sm sm:text-base font-extrabold text-[#122B52] dark:text-white">
-                      {ev.titulo}
-                    </h3>
-                    <span className="px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-amber-400 border border-slate-200/70 dark:border-slate-700">
-                      {ev.tipoEvento}
-                    </span>
-                  </div>
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium">
-                    {ev.detalle}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row items-start sm:items-center lg:items-end xl:items-center gap-2 shrink-0">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold">
-                  <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <span>Inicio: {ev.fechaInicio}</span>
-                </div>
-
-                <div
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${
-                    ev.fechaTermino && ev.fechaTermino !== 'En curso (Activa)'
-                      ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60'
-                      : 'bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 border border-red-200/60 dark:border-red-800/60 animate-pulse'
-                  }`}
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                  <span>Término: {ev.fechaTermino || 'En curso (Activa)'}</span>
-                </div>
-              </div>
+          <>
+            {/* Cabecera de Columnas de la Grilla (Visible en Escritorio) */}
+            <div className="hidden lg:grid lg:grid-cols-12 gap-4 px-6 py-3.5 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              <div className="col-span-3">Nombre de Colmenar</div>
+              <div className="col-span-4">Evento y Detalle</div>
+              <div className="col-span-2">Categoría</div>
+              <div className="col-span-3 text-right">Inicio / Término</div>
             </div>
-          ))
+
+            {/* Filas de la Grilla de Datos */}
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              {filteredEvents.map((ev) => {
+                const colmenarName = ev.nombreColmenar || 'Colmenar Principal - Sede PAO';
+                return (
+                  <div
+                    key={ev.id}
+                    className="p-4 sm:px-6 sm:py-5 grid grid-cols-1 lg:grid-cols-12 gap-3.5 lg:gap-4 items-start lg:items-center hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
+                  >
+                    {/* Columna 1: Nombre de Colmenar */}
+                    <div className="lg:col-span-3 flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                        <MapPin className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="lg:hidden text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
+                          Nombre de Colmenar
+                        </span>
+                        <span className="text-xs sm:text-sm font-extrabold text-[#122B52] dark:text-amber-300">
+                          {colmenarName}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Columna 2: Evento y Descripción Detallada */}
+                    <div className="lg:col-span-4 flex items-start sm:items-center gap-3.5">
+                      {renderEventIcon(ev.tipoEvento)}
+                      <div className="space-y-0.5">
+                        <h3 className="text-sm sm:text-base font-extrabold text-[#122B52] dark:text-white">
+                          {ev.titulo}
+                        </h3>
+                        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium">
+                          {ev.detalle}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Columna 3: Categoría */}
+                    <div className="lg:col-span-2 flex items-center">
+                      <span className="px-2.5 py-1 rounded-lg text-[11px] font-extrabold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-amber-400 border border-slate-200/70 dark:border-slate-700">
+                        {ev.tipoEvento}
+                      </span>
+                    </div>
+
+                    {/* Columna 4: Marcas de tiempo Inicio / Término */}
+                    <div className="lg:col-span-3 flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end gap-1.5">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[11px] font-semibold">
+                        <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                        <span>Inicio: {ev.fechaInicio}</span>
+                      </div>
+
+                      <div
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold ${
+                          ev.fechaTermino && ev.fechaTermino !== 'En curso (Activa)'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60'
+                            : 'bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 border border-red-200/60 dark:border-red-800/60 animate-pulse'
+                        }`}
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                        <span>Término: {ev.fechaTermino || 'En curso (Activa)'}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </div>

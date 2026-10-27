@@ -129,6 +129,7 @@ export default function App() {
 
         const payload = {
           id: newEventId,
+          nombreColmenar: 'Colmenar Principal - Sede PAO',
           tipoEvento: categoryKey,
           ...buildEventPayload(),
           fechaInicio: formattedNow,

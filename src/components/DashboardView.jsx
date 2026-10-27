@@ -98,7 +98,7 @@ export default function DashboardView({
             Monitoreo en Tiempo Real
           </h1>
           <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-            Colmenar Principal - Sector Norte
+            Colmenar Principal - Sede PAO
           </p>
         </div>
 
