@@ -388,6 +388,7 @@
         const [showLidModal, setShowLidModal] = useState(false);
         const [showBatteryModal, setShowBatteryModal] = useState(false);
         const [showLogoutModal, setShowLogoutModal] = useState(false);
+        const [smsStatusText, setSmsStatusText] = useState(null);
 
         const [fechaDesde, setFechaDesde] = useState('');
         const [fechaHasta, setFechaHasta] = useState('');
@@ -454,14 +455,45 @@
           );
 
           const isLid = st.tapaStatus === 'OPEN_BLINK_ALERT';
-          if (isLid && !activeEventsRef.current['ESTADO DE TAPADA']) setShowLidModal(true);
+          const isNewLidOpening = isLid && !activeEventsRef.current['ESTADO DE TAPADA'];
+          if (isNewLidOpening) setShowLidModal(true);
           syncCategory('ESTADO DE TAPADA', isLid, 'Alerta Estado de Tapada', 'Tapa del colmenar principal ABIERTA');
           syncCategory(
             'ALERTA CELULAR',
             isLid,
             'Alerta Enviada al Celular',
-            'Notificación móvil enviada al celular del apicultor por apertura de tapa de la colmena'
+            'Notificación SMS enviada al celular del apicultor por apertura de tapa de la colmena'
           );
+
+          if (isNewLidOpening) {
+            const alertEventId = activeEventsRef.current['ALERTA CELULAR'];
+            setSmsStatusText('Enviando SMS al celular del apicultor...');
+            fetch('http://localhost:8765/api/sms/send', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                nombreColmenar: 'Colmenar Principal - Sede PAO',
+                mensaje: 'ALERTA!!! Tapa de colmena abierta (Colmenar Principal - Sede PAO)',
+              }),
+            })
+              .then((r) => r.json())
+              .then((data) => {
+                if (data && data.ok) {
+                  const confirmMsg = `SMS enviado al celular ${data.telefonoMasked || ''}${data.messageId ? ` [ID: ${data.messageId}]` : ''} por apertura de tapa de la colmena`;
+                  setSmsStatusText(`${confirmMsg} y almacenado en la base de datos.`);
+                  if (alertEventId) {
+                    setEvents((prev) =>
+                      prev.map((ev) => (ev.id === alertEventId ? { ...ev, detalle: confirmMsg } : ev))
+                    );
+                  }
+                } else {
+                  setSmsStatusText('Alerta SMS registrada en la base de datos.');
+                }
+              })
+              .catch(() => {
+                setSmsStatusText('Alerta SMS registrada en la base de datos.');
+              });
+          }
 
           const isBat = st.bateriaStatus === 'CRITICAL_BLINK_10' || st.bateriaStatus === 'LOW_ALERT_20';
           if (isBat && !activeEventsRef.current['ESTADO DE BATERIA']) setShowBatteryModal(true);
@@ -1225,7 +1257,7 @@
                     <h2 className="text-xl font-extrabold text-[#122B52] dark:text-white">¡Alerta de Seguridad!</h2>
                     <p className="text-sm text-slate-600 dark:text-slate-300">Se ha detectado que la tapa del colmenar principal se encuentra <strong className="text-orange-600">ABIERTA</strong>.</p>
                     <div className="px-3.5 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/80 dark:border-indigo-800/70 text-xs font-bold text-indigo-700 dark:text-indigo-300">
-                      📱 Alerta enviada al celular del apicultor y almacenada en la base de datos.
+                      📱 {smsStatusText || 'Alerta SMS enviada al celular del apicultor y almacenada en la base de datos.'}
                     </div>
                     <button onClick={() => setShowLidModal(false)} className="w-full py-3 rounded-xl bg-[#122B52] text-white font-bold text-sm">Entendido</button>
                   </div>

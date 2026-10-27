@@ -10,6 +10,7 @@ import { AlertTriangle, BatteryWarning, LogOut } from 'lucide-react';
 export default function AlertModals({
   showLidModal,
   onDismissLidModal,
+  smsStatusInfo,
   showBatteryModal,
   onDismissBatteryModal,
   showLogoutModal,
@@ -41,7 +42,7 @@ export default function AlertModals({
             </p>
 
             <div className="mb-6 px-3.5 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/80 dark:border-indigo-800/70 text-xs font-bold text-indigo-700 dark:text-indigo-300">
-              📱 Alerta enviada al celular del apicultor y almacenada en la base de datos.
+              📱 {smsStatusInfo?.text || 'Alerta SMS enviada al celular del apicultor y almacenada en la base de datos.'}
             </div>
 
             <button

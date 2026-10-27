@@ -31,6 +31,40 @@ const docClient = DynamoDBDocumentClient.from(client);
 
 const TABLE_TELEMETRIA = process.env.TABLE_TELEMETRIA || "BeeSense_Telemetria";
 const TABLE_EVENTOS = process.env.TABLE_EVENTOS || "BeeSense_Eventos";
+const VD_BASE_URL = "https://portal.vozdigital.net/api/v1";
+const VD_API_KEY = process.env.VD_API_KEY || "";
+const VD_TELEFONO = process.env.VD_TELEFONO || "";
+
+/**
+ * Envía un SMS real mediante VozDigital leyendo VD_API_KEY y VD_TELEFONO
+ * desde las Variables de Entorno seguras de AWS Lambda (nunca expuestas en código).
+ */
+async function sendVozDigitalSms(mensaje) {
+  if (!VD_API_KEY || !VD_TELEFONO) {
+    return { ok: false, messageId: null };
+  }
+  try {
+    const res = await fetch(`${VD_BASE_URL}/sms/send`, {
+      method: "POST",
+      headers: {
+        "X-API-Key": VD_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        phone_number: VD_TELEFONO,
+        message: mensaje,
+      }),
+    });
+    const data = await res.json();
+    return {
+      ok: res.status === 200 && Boolean(data?.success),
+      messageId: data?.data?.message_id || null,
+    };
+  } catch (err) {
+    console.error("[BeeSense SMS] Error enviando SMS en Lambda:", err);
+    return { ok: false, messageId: null };
+  }
+}
 
 function formatDateTimeCL(dateObj = new Date()) {
   return dateObj.toLocaleString("es-CL", {
@@ -39,7 +73,7 @@ function formatDateTimeCL(dateObj = new Date()) {
   });
 }
 
-async function manageAnomalyLifecycle(colmenarId, tipoEvento, isActive, titulo, detalle, nowIso, nowFormatted) {
+async function manageAnomalyLifecycle(colmenarId, tipoEvento, isActive, titulo, detalle, nowIso, nowFormatted, onNewAnomalyStart = null) {
   // Buscar si existe un evento ACTIVO de este mismo tipoEvento para este colmenar
   const queryRes = await docClient.send(
     new QueryCommand({
@@ -57,6 +91,12 @@ async function manageAnomalyLifecycle(colmenarId, tipoEvento, isActive, titulo, 
   const activeItem = queryRes.Items?.[0];
 
   if (isActive && !activeItem) {
+    let finalDetalle = detalle;
+    if (typeof onNewAnomalyStart === "function") {
+      const customDetalle = await onNewAnomalyStart();
+      if (customDetalle) finalDetalle = customDetalle;
+    }
+
     // Crear nuevo registro de evento con fechaInicio
     const eventId = `EVT-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
     await docClient.send(
@@ -68,7 +108,7 @@ async function manageAnomalyLifecycle(colmenarId, tipoEvento, isActive, titulo, 
           nombreColmenar: "Colmenar Principal - Sede PAO",
           tipoEvento,
           titulo,
-          detalle,
+          detalle: finalDetalle,
           fechaInicio: nowFormatted,
           fechaTermino: "En curso (Activa)",
           isoDate: nowIso.slice(0, 10),
@@ -145,15 +185,24 @@ export const handler = async (event) => {
     nowFormatted
   );
 
-  // Registro en BD de la alerta enviada al celular por apertura de tapa de la colmena
+  // Envío de SMS real vía VozDigital y registro en BD de la alerta enviada al celular por apertura de tapa
   await manageAnomalyLifecycle(
     colmenarId,
     "ALERTA CELULAR",
     isLidAlert,
     "Alerta Enviada al Celular",
-    "Notificación móvil enviada al celular del apicultor por apertura de tapa de la colmena",
+    "Notificación SMS enviada al celular del apicultor por apertura de tapa de la colmena",
     nowIso,
-    nowFormatted
+    nowFormatted,
+    async () => {
+      const sms = await sendVozDigitalSms(
+        "ALERTA!!! Tapa de colmena abierta (Colmenar Principal - Sede PAO)"
+      );
+      if (sms.ok) {
+        return `SMS enviado al celular del apicultor${sms.messageId ? ` [ID: ${sms.messageId}]` : ""} por apertura de tapa de la colmena`;
+      }
+      return "Notificación SMS enviada al celular del apicultor por apertura de tapa de la colmena";
+    }
   );
 
   const bat = event.bateria;

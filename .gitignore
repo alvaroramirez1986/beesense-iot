@@ -1,7 +1,18 @@
 # Dependencias y artefactos locales
 node_modules/
 dist/
+
+# Variables de entorno y claves secretas (NUNCA subir a GitHub)
 .env
-.env.local
+.env.*
+**/.env
+**/.env.*
+!.env.example
+
+# Caché de Python
+__pycache__/
+*.py[cod]
+
+# Sistema y logs
 .DS_Store
 *.log

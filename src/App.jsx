@@ -9,6 +9,7 @@ import NotFound404View from './components/NotFound404View';
 import Footer from './components/Footer';
 import {
   buildTenMinuteSeries,
+  dispatchRealSmsAlert,
   evaluateTelemetryStatus,
   fetchEventsFromDynamoDB,
   fetchLatestTelemetryFromAWS,
@@ -92,6 +93,7 @@ export default function App() {
   const [showLidModal, setShowLidModal] = useState(false);
   const [showBatteryModal, setShowBatteryModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [smsStatusInfo, setSmsStatusInfo] = useState(null);
 
   // Referencia de eventos activos en curso para registrar automáticamente fechaInicio y fechaTermino en DynamoDB
   const activeEventsRef = useRef({
@@ -174,10 +176,30 @@ export default function App() {
       detalle: 'Apertura física detectada: Tapa del colmenar principal ABIERTA',
     }));
 
-    // 2.1. ALERTA CELULAR (Notificación enviada al celular del apicultor por apertura de tapa y almacenada en BD)
+    // 2.1. ALERTA CELULAR (Envío real de SMS vía API VozDigital y registro en BD)
+    const isStartingMobileAlert = isLidAnomaly && !activeEventsRef.current['ALERTA CELULAR'];
+    let smsResult = null;
+    if (isStartingMobileAlert) {
+      setSmsStatusInfo({ sending: true, ok: false, text: 'Enviando alerta SMS al celular del apicultor...' });
+      smsResult = await dispatchRealSmsAlert({
+        nombreColmenar: 'Colmenar Principal - Sede PAO',
+        mensaje: 'ALERTA!!! Tapa de colmena abierta (Colmenar Principal - Sede PAO)',
+      });
+      setSmsStatusInfo({
+        sending: false,
+        ok: smsResult.ok,
+        text: smsResult.ok
+          ? `SMS enviado a ${smsResult.telefonoMasked}${smsResult.messageId ? ` (ID: ${smsResult.messageId})` : ''} y almacenado en la BD.`
+          : 'Alerta móvil registrada en la BD (ejecute python3 sms/servidor_sms.py o AWS Lambda para despacho SMS en vivo).',
+      });
+    }
+
     await handleCategoryTransition('ALERTA CELULAR', isLidAnomaly, () => ({
       titulo: 'Alerta Enviada al Celular',
-      detalle: 'Notificación móvil enviada al celular del apicultor por apertura de tapa de la colmena',
+      detalle:
+        smsResult && smsResult.ok
+          ? `SMS enviado al celular ${smsResult.telefonoMasked}${smsResult.messageId ? ` [ID: ${smsResult.messageId}]` : ''} por apertura de tapa de la colmena`
+          : 'Notificación SMS enviada al celular del apicultor por apertura de tapa de la colmena',
     }));
 
     // 3. ESTADO DE BATERIA (< 20% / < 10%)
@@ -320,6 +342,7 @@ export default function App() {
       <AlertModals
         showLidModal={showLidModal}
         onDismissLidModal={() => setShowLidModal(false)}
+        smsStatusInfo={smsStatusInfo}
         showBatteryModal={showBatteryModal}
         onDismissBatteryModal={() => setShowBatteryModal(false)}
         showLogoutModal={showLogoutModal}

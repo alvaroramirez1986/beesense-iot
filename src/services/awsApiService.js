@@ -15,6 +15,7 @@
  */
 
 const AWS_API_BASE_URL = import.meta.env.VITE_AWS_API_BASE_URL || '';
+const SMS_BRIDGE_URL = import.meta.env.VITE_SMS_BRIDGE_URL || 'http://localhost:8765';
 const COLMENAR_ID = import.meta.env.VITE_COLMENAR_ID || 'COLMENAR-PAO-01';
 const LOCAL_STORAGE_EVENTS_KEY = 'beesense_dynamodb_events_v1';
 
@@ -186,6 +187,62 @@ export async function registerEventEndInDynamoDB(eventId, fechaTermino, isoTermi
     }
   }
   return updated;
+}
+
+/**
+ * Dispara el envío real de alerta SMS cuando se detecta apertura de tapa,
+ * delegando la petición al Backend (AWS API Gateway o Servidor Puente Python local)
+ * para mantener la clave VD_API_KEY 100% protegida fuera del navegador.
+ */
+export async function dispatchRealSmsAlert({
+  nombreColmenar = 'Colmenar Principal - Sede PAO',
+  mensaje = 'ALERTA!!! Tapa de colmena abierta (Colmenar Principal - Sede PAO)',
+} = {}) {
+  // 1. Intentar primero mediante AWS API Gateway si está configurado en producción
+  if (AWS_API_BASE_URL) {
+    try {
+      const res = await fetch(`${AWS_API_BASE_URL}/sms-alert`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ colmenarId: COLMENAR_ID, nombreColmenar, mensaje }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return {
+          ok: Boolean(data.ok),
+          messageId: data.messageId || null,
+          telefonoMasked: data.telefonoMasked || 'Celular registrado',
+          channel: 'AWS Lambda + VozDigital SMS',
+        };
+      }
+    } catch (err) {
+      console.warn('[BeeSense SMS] Intentando puente SMS local como respaldo:', err);
+    }
+  }
+
+  // 2. Llamar al micro-servidor puente local en Python (sms/servidor_sms.py)
+  try {
+    const res = await fetch(`${SMS_BRIDGE_URL}/api/sms/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombreColmenar, mensaje }),
+    });
+    const data = await res.json();
+    return {
+      ok: Boolean(data.ok),
+      messageId: data.messageId || null,
+      telefonoMasked: data.telefonoMasked || 'Celular registrado',
+      channel: 'Servidor SMS Python (VozDigital)',
+    };
+  } catch (error) {
+    console.warn('[BeeSense SMS] Servidor puente local no detectado en', SMS_BRIDGE_URL);
+    return {
+      ok: false,
+      messageId: null,
+      telefonoMasked: 'Celular del apicultor',
+      channel: 'Cola de eventos BD',
+    };
+  }
 }
 
 /**

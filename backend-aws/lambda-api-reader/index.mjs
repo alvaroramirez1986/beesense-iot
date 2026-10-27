@@ -23,6 +23,15 @@ const docClient = DynamoDBDocumentClient.from(client);
 
 const TABLE_TELEMETRIA = process.env.TABLE_TELEMETRIA || "BeeSense_Telemetria";
 const TABLE_EVENTOS = process.env.TABLE_EVENTOS || "BeeSense_Eventos";
+const VD_BASE_URL = "https://portal.vozdigital.net/api/v1";
+const VD_API_KEY = process.env.VD_API_KEY || "";
+const VD_TELEFONO = process.env.VD_TELEFONO || "";
+
+function maskPhone(phone = "") {
+  const clean = String(phone).trim();
+  if (clean.length <= 4) return "****";
+  return `+${clean.slice(0, 3)} **** ${clean.slice(-4)}`;
+}
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -135,6 +144,49 @@ export const handler = async (event) => {
         statusCode: 200,
         headers: CORS_HEADERS,
         body: JSON.stringify({ updated: true }),
+      };
+    }
+
+    // 5. POST /sms-alert (Envío seguro de SMS vía VozDigital sin exponer VD_API_KEY en el cliente)
+    if (method === "POST" && path.endsWith("/sms-alert")) {
+      const body = JSON.parse(event.body || "{}");
+      const mensaje =
+        body.mensaje ||
+        `ALERTA!!! Tapa de colmena abierta (${body.nombreColmenar || "Colmenar Principal - Sede PAO"})`;
+
+      if (!VD_API_KEY || !VD_TELEFONO) {
+        return {
+          statusCode: 500,
+          headers: CORS_HEADERS,
+          body: JSON.stringify({
+            ok: false,
+            error: "Configure VD_API_KEY y VD_TELEFONO en las variables de entorno de AWS Lambda",
+          }),
+        };
+      }
+
+      const vdRes = await fetch(`${VD_BASE_URL}/sms/send`, {
+        method: "POST",
+        headers: {
+          "X-API-Key": VD_API_KEY,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          phone_number: VD_TELEFONO,
+          message: mensaje,
+        }),
+      });
+      const vdData = await vdRes.json();
+      const ok = vdRes.status === 200 && Boolean(vdData?.success);
+
+      return {
+        statusCode: ok ? 200 : 502,
+        headers: CORS_HEADERS,
+        body: JSON.stringify({
+          ok,
+          messageId: vdData?.data?.message_id || null,
+          telefonoMasked: maskPhone(VD_TELEFONO),
+        }),
       };
     }
 
