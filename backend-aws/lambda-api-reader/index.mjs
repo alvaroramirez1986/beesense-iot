@@ -91,12 +91,14 @@ export const handler = async (event) => {
           Item: {
             colmenarId: body.colmenarId || colmenarId,
             id: body.id || `EVT-${Date.now()}`,
+            nombreColmenar: body.nombreColmenar || "Colmenar Principal - Sede PAO",
             tipoEvento: body.tipoEvento,
             titulo: body.titulo,
             detalle: body.detalle,
             fechaInicio: body.fechaInicio,
             fechaTermino: body.fechaTermino || "En curso (Activa)",
             isoDate: body.isoDate,
+            horaInicio24: body.horaInicio24,
             estadoEvento: body.estadoEvento || "ACTIVO",
           },
         })

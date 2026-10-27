@@ -9,12 +9,13 @@
  *    DynamoDB de eventos críticos con Fecha/Hora de Inicio y Fecha/Hora de Término:
  *    - TEMPERATURA (>= 36.1 °C o < 15.0 °C)
  *    - ESTADO DE TAPADA (Tapa ABIERTA)
+ *    - ALERTA CELULAR (Notificación enviada al celular por apertura de tapa de la colmena)
  *    - ESTADO DE BATERIA (< 10% parpadeo crítico / < 20% batería crítica)
  *    - N/A (Pérdida de conectividad en uno o más sensores)
  */
 
 const AWS_API_BASE_URL = import.meta.env.VITE_AWS_API_BASE_URL || '';
-const COLMENAR_ID = import.meta.env.VITE_COLMENAR_ID || 'COLMENAR-NORTE-01';
+const COLMENAR_ID = import.meta.env.VITE_COLMENAR_ID || 'COLMENAR-PAO-01';
 const LOCAL_STORAGE_EVENTS_KEY = 'beesense_dynamodb_events_v1';
 
 /**

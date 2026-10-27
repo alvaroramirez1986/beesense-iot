@@ -12,22 +12,25 @@ import {
   CheckCircle2,
   Zap,
   MapPin,
+  Smartphone,
 } from 'lucide-react';
 import { exportEventsToPDF } from '../services/pdfExportService';
 import { getEventTimeHHMM } from '../services/awsApiService';
 
 /**
- * Lista desplegable de 5 ítems requerida en la especificación de la Figura 3:
+ * Lista desplegable de categorías de eventos en la vista de Reportes:
  * 1. TODOS (Todas las categorías)
  * 2. TEMPERATURA
  * 3. ESTADO DE TAPADA
- * 4. ESTADO DE BATERIA
- * 5. N/A
+ * 4. ALERTA CELULAR (Alertas enviadas al celular por apertura de tapa)
+ * 5. ESTADO DE BATERIA
+ * 6. N/A
  */
 const EVENT_TYPE_OPTIONS = [
   { value: 'TODOS', label: 'TODOS LOS EVENTOS' },
   { value: 'TEMPERATURA', label: 'TEMPERATURA' },
   { value: 'ESTADO DE TAPADA', label: 'ESTADO DE TAPADA' },
+  { value: 'ALERTA CELULAR', label: 'ALERTA CELULAR (TAPA ABIERTA)' },
   { value: 'ESTADO DE BATERIA', label: 'ESTADO DE BATERIA' },
   { value: 'N/A', label: 'N/A' },
 ];
@@ -102,6 +105,12 @@ export default function ReportsView({ events = [] }) {
         return (
           <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
             <ShieldAlert className="w-5 h-5" />
+          </div>
+        );
+      case 'ALERTA CELULAR':
+        return (
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+            <Smartphone className="w-5 h-5" />
           </div>
         );
       case 'ESTADO DE BATERIA':

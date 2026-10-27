@@ -97,6 +97,7 @@ export default function App() {
   const activeEventsRef = useRef({
     TEMPERATURA: null,
     'ESTADO DE TAPADA': null,
+    'ALERTA CELULAR': null,
     'ESTADO DE BATERIA': null,
     'N/A': null,
   });
@@ -163,7 +164,7 @@ export default function App() {
           : `Temperatura interior crítica baja: ${Number(currentTelemetry.tempInterior).toFixed(1)}°C (Umbral < 15.0°C)`,
     }));
 
-    // 2. ESTADO DE TAPADA (Tapa ABIERTA)
+    // 2. ESTADO DE TAPADA (Tapa ABIERTA) + ALERTA ENVIADA AL CELULAR
     const isLidAnomaly = status.tapaStatus === 'OPEN_BLINK_ALERT';
     if (isLidAnomaly && !activeEventsRef.current['ESTADO DE TAPADA']) {
       setShowLidModal(true);
@@ -171,6 +172,12 @@ export default function App() {
     await handleCategoryTransition('ESTADO DE TAPADA', isLidAnomaly, () => ({
       titulo: 'Alerta Estado de Tapada',
       detalle: 'Apertura física detectada: Tapa del colmenar principal ABIERTA',
+    }));
+
+    // 2.1. ALERTA CELULAR (Notificación enviada al celular del apicultor por apertura de tapa y almacenada en BD)
+    await handleCategoryTransition('ALERTA CELULAR', isLidAnomaly, () => ({
+      titulo: 'Alerta Enviada al Celular',
+      detalle: 'Notificación móvil enviada al celular del apicultor por apertura de tapa de la colmena',
     }));
 
     // 3. ESTADO DE BATERIA (< 20% / < 10%)

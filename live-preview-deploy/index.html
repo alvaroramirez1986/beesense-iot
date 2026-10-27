@@ -370,7 +370,20 @@
           bateria: 86.4,
         });
         const [chartData, setChartData] = useState(() => buildTenMinuteSeries(34.2, 25.1));
-        const [events, setEvents] = useState([]);
+        const [events, setEvents] = useState(() => {
+          try {
+            const saved = localStorage.getItem('beesense_dynamodb_events_v1');
+            return saved ? JSON.parse(saved) : [];
+          } catch (e) {
+            return [];
+          }
+        });
+
+        useEffect(() => {
+          try {
+            localStorage.setItem('beesense_dynamodb_events_v1', JSON.stringify(events));
+          } catch (e) {}
+        }, [events]);
 
         const [showLidModal, setShowLidModal] = useState(false);
         const [showBatteryModal, setShowBatteryModal] = useState(false);
@@ -387,6 +400,7 @@
         const activeEventsRef = useRef({
           TEMPERATURA: null,
           'ESTADO DE TAPADA': null,
+          'ALERTA CELULAR': null,
           'ESTADO DE BATERIA': null,
           'N/A': null,
         });
@@ -442,6 +456,12 @@
           const isLid = st.tapaStatus === 'OPEN_BLINK_ALERT';
           if (isLid && !activeEventsRef.current['ESTADO DE TAPADA']) setShowLidModal(true);
           syncCategory('ESTADO DE TAPADA', isLid, 'Alerta Estado de Tapada', 'Tapa del colmenar principal ABIERTA');
+          syncCategory(
+            'ALERTA CELULAR',
+            isLid,
+            'Alerta Enviada al Celular',
+            'Notificación móvil enviada al celular del apicultor por apertura de tapa de la colmena'
+          );
 
           const isBat = st.bateriaStatus === 'CRITICAL_BLINK_10' || st.bateriaStatus === 'LOW_ALERT_20';
           if (isBat && !activeEventsRef.current['ESTADO DE BATERIA']) setShowBatteryModal(true);
@@ -1024,6 +1044,7 @@
                               <option value="TODOS">TODOS LOS EVENTOS</option>
                               <option value="TEMPERATURA">TEMPERATURA</option>
                               <option value="ESTADO DE TAPADA">ESTADO DE TAPADA</option>
+                              <option value="ALERTA CELULAR">ALERTA CELULAR (TAPA ABIERTA)</option>
                               <option value="ESTADO DE BATERIA">ESTADO DE BATERIA</option>
                               <option value="N/A">N/A</option>
                             </select>
@@ -1203,6 +1224,9 @@
                   <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 max-w-sm w-full text-center space-y-4">
                     <h2 className="text-xl font-extrabold text-[#122B52] dark:text-white">¡Alerta de Seguridad!</h2>
                     <p className="text-sm text-slate-600 dark:text-slate-300">Se ha detectado que la tapa del colmenar principal se encuentra <strong className="text-orange-600">ABIERTA</strong>.</p>
+                    <div className="px-3.5 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/80 dark:border-indigo-800/70 text-xs font-bold text-indigo-700 dark:text-indigo-300">
+                      📱 Alerta enviada al celular del apicultor y almacenada en la base de datos.
+                    </div>
                     <button onClick={() => setShowLidModal(false)} className="w-full py-3 rounded-xl bg-[#122B52] text-white font-bold text-sm">Entendido</button>
                   </div>
                 </div>

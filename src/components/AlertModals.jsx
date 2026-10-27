@@ -32,13 +32,17 @@ export default function AlertModals({
               ¡Alerta de Seguridad!
             </h2>
 
-            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-7">
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-4">
               Se ha detectado que la tapa del colmenar principal se encuentra{' '}
               <span className="font-extrabold text-orange-600 dark:text-orange-400">
                 ABIERTA
               </span>
               .
             </p>
+
+            <div className="mb-6 px-3.5 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/80 dark:border-indigo-800/70 text-xs font-bold text-indigo-700 dark:text-indigo-300">
+              📱 Alerta enviada al celular del apicultor y almacenada en la base de datos.
+            </div>
 
             <button
               type="button"

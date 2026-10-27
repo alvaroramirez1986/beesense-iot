@@ -11,6 +11,7 @@
  * Evalúa automáticamente las reglas de negocio del documento:
  * - Temperatura Interior >= 36.1 °C o < 15.0 °C  --> Tipo: "TEMPERATURA"
  * - Estado de Tapa === "ABIERTA"                 --> Tipo: "ESTADO DE TAPADA"
+ * - Alerta Móvil por apertura de tapa            --> Tipo: "ALERTA CELULAR"
  * - Nivel de Batería < 20% / < 10%               --> Tipo: "ESTADO DE BATERIA"
  * - Desconexión de algún sensor (null / N/A)     --> Tipo: "N/A"
  * Almacenando fecha/hora de inicio y actualizando la fecha/hora de término
@@ -64,6 +65,7 @@ async function manageAnomalyLifecycle(colmenarId, tipoEvento, isActive, titulo, 
         Item: {
           colmenarId,
           id: eventId,
+          nombreColmenar: "Colmenar Principal - Sede PAO",
           tipoEvento,
           titulo,
           detalle,
@@ -139,6 +141,17 @@ export const handler = async (event) => {
     isLidAlert,
     "Alerta Estado de Tapada",
     "Apertura de tapa detectada en colmenar principal (ABIERTA)",
+    nowIso,
+    nowFormatted
+  );
+
+  // Registro en BD de la alerta enviada al celular por apertura de tapa de la colmena
+  await manageAnomalyLifecycle(
+    colmenarId,
+    "ALERTA CELULAR",
+    isLidAlert,
+    "Alerta Enviada al Celular",
+    "Notificación móvil enviada al celular del apicultor por apertura de tapa de la colmena",
     nowIso,
     nowFormatted
   );
