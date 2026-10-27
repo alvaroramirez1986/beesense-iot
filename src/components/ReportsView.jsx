@@ -44,29 +44,23 @@ export default function ReportsView({ events = [] }) {
   // Filtrado combinado: solo evalúa el rango horario cuando el usuario lo activa manualmente
   const filteredEvents = useMemo(() => {
     return events.filter((ev) => {
-      // 1. Filtro por Tipo de Evento
       if (tipoEvento !== 'TODOS' && ev.tipoEvento !== tipoEvento) {
         return false;
       }
 
-      // 2. Filtro por Fecha Desde (YYYY-MM-DD)
       if (fechaDesde && ev.isoDate) {
         if (ev.isoDate < fechaDesde) return false;
       }
 
-      // 3. Filtro por Fecha Hasta (YYYY-MM-DD)
       if (fechaHasta && ev.isoDate) {
         if (ev.isoDate > fechaHasta) return false;
       }
 
-      // 4. Filtro por Rango Horario (SOLO se ejecuta si el usuario lo activó manualmente)
       if (rangoHorarioActivo && horaDesde && horaHasta) {
         const evTime = getEventTimeHHMM(ev);
         if (horaDesde <= horaHasta) {
-          // Rango diurno normal (ej. 08:00 a 20:00)
           if (evTime < horaDesde || evTime > horaHasta) return false;
         } else {
-          // Rango nocturno que cruza medianoche (ej. 22:00 a 06:00)
           if (evTime < horaDesde && evTime > horaHasta) return false;
         }
       }
@@ -128,7 +122,7 @@ export default function ReportsView({ events = [] }) {
   return (
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-8 py-6 sm:py-8 space-y-6">
       {/* ====================================================================
-          ENCABEZADO AZUL MARINO CON BOTÓN "EXPORTAR A PDF" (CON LOGO BEESENSE)
+          ENCABEZADO AZUL MARINO CON BOTÓN "Exportar a PDF" (Figura 3)
           ==================================================================== */}
       <div className="rounded-[24px] bg-[#16325B] dark:bg-[#0F2442] text-white p-6 sm:p-8 shadow-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border border-slate-700/40">
         <div>
@@ -136,7 +130,7 @@ export default function ReportsView({ events = [] }) {
             Registro de Eventos
           </h1>
           <p className="text-xs sm:text-sm text-slate-300 mt-1">
-            Historial de alertas y eventos críticos detectados por los sensores y almacenados en Amazon DynamoDB.
+            Historial de alertas y eventos críticos detectados por los sensores
           </p>
         </div>
 
@@ -146,7 +140,7 @@ export default function ReportsView({ events = [] }) {
           className="inline-flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl bg-white/15 hover:bg-white/25 active:scale-[0.99] text-white font-bold text-xs sm:text-sm border border-white/25 shadow-sm transition-all shrink-0"
         >
           <FileDown className="w-4 h-4 text-amber-300" />
-          <span>Exportar a PDF (Con Logo Oficial)</span>
+          <span>Exportar a PDF</span>
         </button>
       </div>
 
@@ -155,17 +149,12 @@ export default function ReportsView({ events = [] }) {
           ==================================================================== */}
       <div className="rounded-[22px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 sm:p-6 shadow-xs space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-          {/* Etiqueta principal */}
-          <div className="md:col-span-3 flex items-center gap-2.5 pb-1">
+          {/* Etiqueta principal depurada (sin mención a DynamoDB) */}
+          <div className="md:col-span-3 flex items-center gap-2.5 pb-2">
             <Calendar className="w-5 h-5 text-amber-500 shrink-0" />
-            <div>
-              <span className="text-sm font-extrabold text-[#122B52] dark:text-white block">
-                Filtrar Eventos
-              </span>
-              <span className="text-[11px] text-slate-400">
-                Consultas optimizadas en DynamoDB
-              </span>
-            </div>
+            <span className="text-sm font-extrabold text-[#122B52] dark:text-white block">
+              Filtrar Eventos
+            </span>
           </div>
 
           {/* Selector Tipo de Evento (Lista desplegable de 5 ítems) */}
@@ -230,8 +219,6 @@ export default function ReportsView({ events = [] }) {
 
         {/* ==================================================================
             FILTRO OPCIONAL POR RANGO HORARIO (ACTIVACIÓN MANUAL POR EL USUARIO)
-            Para optimizar el rendimiento de las consultas, permanece inactivo
-            hasta que el usuario lo habilite manualmente.
             ================================================================== */}
         <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -258,18 +245,17 @@ export default function ReportsView({ events = [] }) {
                 </span>
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800/70">
                   <Zap className="w-3 h-3" />
-                  <span>Optimización de consulta</span>
+                  <span>Activación manual</span>
                 </span>
               </div>
               <p className="text-[11px] text-slate-400">
                 {rangoHorarioActivo
                   ? 'Filtro horario activo: acotando registros dentro de la franja horaria seleccionada.'
-                  : 'Desactivado por defecto para maximizar la velocidad de consulta.'}
+                  : 'Actívelo manualmente cuando requiera acotar la búsqueda por franja horaria.'}
               </p>
             </div>
           </div>
 
-          {/* Controles de Hora Inicio y Hora Término (visibles solo al activar manualmente la opción) */}
           {rangoHorarioActivo && (
             <div className="flex flex-wrap items-center gap-3 bg-slate-50 dark:bg-slate-800/70 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700 animate-fadeIn">
               <div className="flex items-center gap-2">
@@ -338,7 +324,6 @@ export default function ReportsView({ events = [] }) {
                 </div>
               </div>
 
-              {/* Marcas de tiempo de Inicio y Término en DynamoDB */}
               <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row items-start sm:items-center lg:items-end xl:items-center gap-2 shrink-0">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold">
                   <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />

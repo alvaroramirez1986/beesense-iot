@@ -4,6 +4,7 @@ import { Compass } from 'lucide-react';
 /**
  * Pie de Página Institucional requerido en documento:
  * "NOTA: El sitio debe tener un pie de pagina con los colores correspondientes que diga 'BeeSense 2026.'"
+ * (Depurado sin mención a tecnologías de nube).
  */
 export default function Footer({ onOpen404 }) {
   return (
@@ -18,7 +19,7 @@ export default function Footer({ onOpen404 }) {
         </div>
         <div className="flex flex-wrap items-center justify-center gap-3">
           <p className="text-[11px] sm:text-xs text-slate-300 font-medium">
-            Monitoreo Apícola IoT en Tiempo Real • AWS IoT Core &amp; Amazon DynamoDB
+            Monitoreo Apícola IoT en Tiempo Real
           </p>
           {onOpen404 && (
             <button

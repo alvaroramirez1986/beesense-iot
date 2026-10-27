@@ -2,14 +2,14 @@
  * ============================================================================
  * SERVICIO DE EXPORTACIÓN DE REPORTES A FORMATO PDF CON LOGOTIPO BEESENSE
  * ============================================================================
- * Incluye en el diseño (layout) del documento PDF el logotipo oficial de BeeSense,
- * metadatos del colmenar, resumen de filtros aplicados (incluyendo el filtro
- * opcional de rango horario) y tabla detallada de eventos en DynamoDB.
+ * - Incluye el logotipo oficial de BeeSense en su resolución nativa (644x197 px)
+ *   respetando su proporción exacta (3.269:1) y alineación vertical/horizontal.
+ * - Incluye resumen de filtros aplicados y tabla cronológica de eventos.
  */
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { formatDateTimeCL } from './awsApiService';
-import { BEESENSE_LOGO_BASE64 } from './logoBase64';
+import { BEESENSE_LOGO_BASE64, BEESENSE_LOGO_ASPECT_RATIO } from './logoBase64';
 
 export function exportEventsToPDF(events, filters = {}) {
   const doc = new jsPDF({
@@ -19,40 +19,52 @@ export function exportEventsToPDF(events, filters = {}) {
   });
 
   // 1. Franja Superior Institucional Azul Marino BeeSense (#122B52)
+  const headerHeight = 36;
   doc.setFillColor(18, 43, 82);
-  doc.rect(0, 0, 297, 36, 'F');
+  doc.rect(0, 0, 297, headerHeight, 'F');
 
   // 2. Línea acento inferior dorada (#D4A017)
   doc.setFillColor(212, 160, 23);
-  doc.rect(0, 35, 297, 1.5, 'F');
+  doc.rect(0, headerHeight - 1.5, 297, 1.5, 'F');
 
-  // 3. Contenedor blanco redondeado para el Logotipo Oficial de BeeSense en la esquina superior izquierda
+  // 3. Contenedor blanco redondeado con alineación simétrica y proporción exacta del Logo BeeSense
+  const badgeX = 14;
+  const badgeY = 5.5;
+  const badgeW = 64;
+  const badgeH = 23.5;
   doc.setFillColor(255, 255, 255);
-  doc.roundedRect(12, 5.5, 58, 24, 3, 3, 'F');
+  doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 3, 3, 'F');
+
+  // Cálculo exacto de dimensiones de imagen manteniendo la relación de aspecto nativa (3.269:1)
+  const logoMaxW = 58;
+  const logoH = Number((logoMaxW / (BEESENSE_LOGO_ASPECT_RATIO || 3.269)).toFixed(2)); // ~17.74 mm
+  const logoX = badgeX + (badgeW - logoMaxW) / 2;
+  const logoY = badgeY + (badgeH - logoH) / 2;
 
   try {
-    doc.addImage(BEESENSE_LOGO_BASE64, 'PNG', 14.5, 7.5, 53, 19.5);
+    doc.addImage(BEESENSE_LOGO_BASE64, 'PNG', logoX, logoY, logoMaxW, logoH, undefined, 'SLOW');
   } catch (err) {
     console.warn('[BeeSense PDF] Fallback de texto si addImage falla:', err);
     doc.setTextColor(18, 43, 82);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(15);
-    doc.text('BeeSense IoT', 18, 19);
+    doc.text('BeeSense IoT', badgeX + 8, badgeY + 14);
   }
 
-  // 4. Título y Subtítulo del Reporte Oficial a la derecha del Logotipo
+  // 4. Título y Subtítulo del Reporte Oficial alineados a la derecha del Logotipo
+  const textStartX = 84;
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.text('REPORTE OFICIAL DE EVENTOS Y ALERTAS TELEMÉTRICAS IoT', 76, 15);
+  doc.setFontSize(15.5);
+  doc.text('REPORTE OFICIAL DE EVENTOS Y ALERTAS TELEMÉTRICAS IoT', textStartX, 14);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9.5);
   doc.setTextColor(203, 213, 225);
   doc.text(
-    `Colmenar: Colmenar Principal - Sector Norte   |   Origen: Amazon DynamoDB   |   Emisión: ${formatDateTimeCL(new Date())}`,
-    76,
-    22.5
+    `Colmenar: Colmenar Principal - Sector Norte   |   Fecha de emisión: ${formatDateTimeCL(new Date())}`,
+    textStartX,
+    21.5
   );
 
   // 5. Resumen de filtros aplicados (incluyendo Rango Horario si fue activado manualmente)
@@ -61,15 +73,15 @@ export function exportEventsToPDF(events, filters = {}) {
   const hastaLabel = filters.fechaHasta || 'Actualidad';
   const horarioLabel = filters.rangoHorarioActivo
     ? `${filters.horaDesde || '00:00'} a ${filters.horaHasta || '23:59'} hrs`
-    : 'Desactivado (Consulta día completo)';
+    : 'Día completo';
 
   doc.setTextColor(245, 158, 11);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.text(
-    `Filtros -> Tipo: ${tipoLabel}  |  Fechas: ${desdeLabel} - ${hastaLabel}  |  Rango Horario: ${horarioLabel}  |  Total: ${events.length} evento(s)`,
-    76,
-    29.5
+    `Filtros -> Tipo: ${tipoLabel}  |  Fechas: ${desdeLabel} - ${hastaLabel}  |  Horario: ${horarioLabel}  |  Total: ${events.length} evento(s)`,
+    textStartX,
+    28.5
   );
 
   // 6. Construcción de filas de la tabla
@@ -86,7 +98,7 @@ export function exportEventsToPDF(events, filters = {}) {
     startY: 42,
     head: [[
       '#',
-      'Categoría (DB)',
+      'Categoría',
       'Evento',
       'Descripción Detallada',
       'Fecha y Hora de Inicio',
@@ -123,7 +135,7 @@ export function exportEventsToPDF(events, filters = {}) {
       doc.setFontSize(8.5);
       doc.setTextColor(100, 116, 139);
       doc.text(
-        `BeeSense 2026. — Plataforma de Monitoreo Apícola IoT (AWS IoT Core + Amazon DynamoDB) — Página ${data.pageNumber}`,
+        `BeeSense 2026. — Plataforma de Monitoreo Apícola IoT — Página ${data.pageNumber}`,
         14,
         pageHeight - 8
       );

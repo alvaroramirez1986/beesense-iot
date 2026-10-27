@@ -21,9 +21,7 @@ export function AnimatedBee({ className = '', size = 38, flip = false }) {
           height={size}
           className="drop-shadow-[0_4px_10px_rgba(255,251,235,0.65)]"
         >
-          {/* Resplandor sutil para destacar sobre fondos claros y oscuros */}
           <circle cx="33" cy="32" r="22" fill="rgba(254, 243, 199, 0.22)" />
-          {/* Alas superiores con animación de aleteo */}
           <g className="bee-wing">
             <ellipse
               cx="26"
@@ -46,9 +44,7 @@ export function AnimatedBee({ className = '', size = 38, flip = false }) {
               transform="rotate(22 38 18)"
             />
           </g>
-          {/* Aguijón */}
           <polygon points="9,34 18,30 18,38" fill="#0f172a" />
-          {/* Cuerpo de la abeja */}
           <ellipse
             cx="33"
             cy="34"
@@ -58,11 +54,9 @@ export function AnimatedBee({ className = '', size = 38, flip = false }) {
             stroke="#0f172a"
             strokeWidth="2.6"
           />
-          {/* Franjas negras */}
           <path d="M26 23 C25 34, 25 34, 26 45" stroke="#0f172a" strokeWidth="4.6" strokeLinecap="round" />
           <path d="M35 22 C34 34, 34 34, 35 46" stroke="#0f172a" strokeWidth="4.6" strokeLinecap="round" />
           <path d="M43 25 C42 34, 42 34, 43 43" stroke="#0f172a" strokeWidth="3.8" strokeLinecap="round" />
-          {/* Ojo y antenas */}
           <circle cx="45" cy="31" r="2.2" fill="#ffffff" />
           <path d="M47 26 Q52 19 56 21" fill="none" stroke="#0f172a" strokeWidth="2.2" strokeLinecap="round" />
           <path d="M49 28 Q55 24 58 27" fill="none" stroke="#0f172a" strokeWidth="2.2" strokeLinecap="round" />
@@ -78,7 +72,6 @@ export function AnimatedBee({ className = '', size = 38, flip = false }) {
 export function BeeSwarmOverlay() {
   return (
     <div className="pointer-events-none fixed inset-0 z-10 overflow-hidden">
-      {/* 8 abejas en trayectorias continuas cruzando toda la pantalla */}
       <div className="bee-flight-1 absolute left-0 top-0">
         <AnimatedBee size={38} />
       </div>
@@ -104,7 +97,6 @@ export function BeeSwarmOverlay() {
         <AnimatedBee size={29} />
       </div>
 
-      {/* 4 abejas patrullando zonas visibles en Mobile y Escritorio */}
       <div className="bee-orbit absolute left-[7%] top-[14%]">
         <AnimatedBee size={34} />
       </div>
@@ -123,31 +115,24 @@ export function BeeSwarmOverlay() {
 
 /**
  * Pantalla de Acceso (Login - Figura 1)
- * - Enjambre ampliado de 12 abejas animadas visibles tanto en mobile como en escritorio
- * - En vista mobile: contenedor y botón de Google redimensionados para mejor proporción en pantalla
+ * - Sin texto descriptivo secundario bajo el logo
+ * - Pantalla de carga (Loader) mostrando exclusivamente el mensaje "Iniciando BeeSense IoT"
  */
 export default function LoginScreen({ onLoginSuccess, onOpen404Preview }) {
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState(0);
-
-  const loadingMessages = [
-    'Verificando credenciales con Google Identity...',
-    'Estableciendo sesión segura con AWS IoT Core (MQTT/TLS)...',
-    'Sincronizando eventos y telemetría desde Amazon DynamoDB...',
-    'Cargando Dashboard de Colmenar Principal - Sector Norte...',
-  ];
+  const [progressWidth, setProgressWidth] = useState(20);
 
   const handleGoogleLogin = () => {
     if (isLoading) return;
     setIsLoading(true);
-    setLoadingStep(0);
+    setProgressWidth(25);
 
-    setTimeout(() => setLoadingStep(1), 550);
-    setTimeout(() => setLoadingStep(2), 1150);
-    setTimeout(() => setLoadingStep(3), 1750);
+    setTimeout(() => setProgressWidth(55), 500);
+    setTimeout(() => setProgressWidth(85), 1100);
+    setTimeout(() => setProgressWidth(100), 1650);
     setTimeout(() => {
       onLoginSuccess();
-    }, 2350);
+    }, 2000);
   };
 
   return (
@@ -170,12 +155,12 @@ export default function LoginScreen({ onLoginSuccess, onOpen404Preview }) {
 
       <div className="h-2 sm:h-4" />
 
-      {/* Cuadro Central Blanco con proporciones optimizadas en Mobile (w-[85vw] max-w-[320px]) y Escritorio (sm:max-w-[440px]) */}
-      <main className="relative z-20 w-[85vw] max-w-[320px] sm:w-full sm:max-w-[440px] bg-white/95 backdrop-blur-md rounded-[24px] sm:rounded-[28px] shadow-[0_25px_60px_-15px_rgba(69,42,6,0.55)] border border-amber-100/80 px-5 py-6 sm:px-10 sm:py-11 flex flex-col items-center text-center transition-all duration-300">
+      {/* Cuadro Central Blanco con proporciones optimizadas en Mobile y Escritorio */}
+      <main className="relative z-20 w-[85vw] max-w-[320px] sm:w-full sm:max-w-[440px] bg-white/95 backdrop-blur-md rounded-[24px] sm:rounded-[28px] shadow-[0_25px_60px_-15px_rgba(69,42,6,0.55)] border border-amber-100/80 px-5 py-7 sm:px-10 sm:py-11 flex flex-col items-center text-center transition-all duration-300">
         {!isLoading ? (
           <>
             {/* Contenedor con resplandor cálido detrás del Logo de Inicio (Hoja 2) */}
-            <div className="relative flex items-center justify-center mb-3 sm:mb-4">
+            <div className="relative flex items-center justify-center mb-6 sm:mb-8">
               <div className="absolute w-32 h-32 sm:w-44 sm:h-44 rounded-full bg-amber-300/30 blur-2xl pointer-events-none" />
               <img
                 src="./assets/logo-login.png"
@@ -183,11 +168,6 @@ export default function LoginScreen({ onLoginSuccess, onOpen404Preview }) {
                 className="relative w-36 sm:w-52 h-auto object-contain select-none drop-shadow-sm transition-transform duration-300 hover:scale-[1.02]"
               />
             </div>
-
-            <p className="text-[11px] sm:text-sm text-slate-500 max-w-[240px] sm:max-w-xs mb-5 sm:mb-7 leading-relaxed">
-              Plataforma de telemetría apícola en tiempo real conectada con{' '}
-              <span className="font-semibold text-slate-700">AWS IoT Core</span>.
-            </p>
 
             {/* Contenedor dimensionado para el botón de inicio de sesión con Google en Mobile y Escritorio */}
             <div className="w-full max-w-[250px] sm:max-w-[320px] bg-slate-50/80 p-1.5 sm:p-2 rounded-2xl border border-slate-200/70 shadow-inner">
@@ -219,8 +199,8 @@ export default function LoginScreen({ onLoginSuccess, onOpen404Preview }) {
             </div>
           </>
         ) : (
-          /* Pantalla de Carga Dinámica en la Transición al Dashboard */
-          <div className="py-4 sm:py-6 px-2 w-full flex flex-col items-center justify-center space-y-5 animate-fadeIn">
+          /* Pantalla de Carga (Loader): Muestra únicamente el texto "Iniciando BeeSense IoT" */
+          <div className="py-5 sm:py-7 px-2 w-full flex flex-col items-center justify-center space-y-5 animate-fadeIn">
             <div className="relative flex items-center justify-center">
               <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-amber-100 border-t-amber-500 border-r-teal-500 animate-spin" />
               <img
@@ -230,31 +210,21 @@ export default function LoginScreen({ onLoginSuccess, onOpen404Preview }) {
               />
             </div>
 
-            <div className="space-y-1.5">
-              <h2 className="text-base sm:text-xl font-extrabold text-[#122B52]">
-                Iniciando BeeSense IoT
-              </h2>
-              <p className="text-xs sm:text-sm font-medium text-teal-700 min-h-[2.5rem] flex items-center justify-center px-2">
-                {loadingMessages[loadingStep]}
-              </p>
-            </div>
+            <h2 className="text-base sm:text-xl font-extrabold text-[#122B52]">
+              Iniciando BeeSense IoT
+            </h2>
 
-            <div className="w-full max-w-xs bg-slate-100 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-200">
+            <div className="w-full max-w-[220px] sm:max-w-xs bg-slate-100 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-200">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-amber-500 via-amber-400 to-teal-500 transition-all duration-500 ease-out"
-                style={{ width: `${((loadingStep + 1) / loadingMessages.length) * 100}%` }}
+                style={{ width: `${progressWidth}%` }}
               />
             </div>
-
-            <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-              Túnel TLS 8883 Activo
-            </span>
           </div>
         )}
       </main>
 
-      {/* Pie de página institucional en Login + acceso rápido opcional para probar la vista 404 */}
+      {/* Pie de página institucional en Login */}
       <footer className="relative z-20 mt-4 flex flex-col sm:flex-row items-center gap-2 text-center">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#122B52]/85 backdrop-blur-sm text-amber-300 text-xs font-bold tracking-wide shadow-md border border-amber-300/30">
           <span className="w-2 h-2 rounded-full bg-teal-400" />
