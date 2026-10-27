@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# ============================================================================
+# GUARDIÁN ANTI-FUGAS DE CREDENCIALES (GIT PRE-COMMIT HOOK) - BEESENSE IoT
+# ============================================================================
+# Este hook inspecciona automáticamente todos los archivos antes de cada commit
+# y bloquea la operación si detecta archivos .env o claves secretas (vd_...).
+
+set -e
+
+# 1. Bloquear si algún archivo .env real está en staging
+STAGED_ENV_FILES=$(git diff --cached --name-only | grep -E '(^|/)\.env($|\.)' | grep -v '\.env\.example$' || true)
+if [ -n "$STAGED_ENV_FILES" ]; then
+  echo "❌ [SEGURIDAD BEESENSE] Commit bloqueado: Intentaste agregar un archivo .env privado:"
+  echo "   $STAGED_ENV_FILES"
+  echo "   Los archivos .env nunca deben subirse a GitHub."
+  exit 1
+fi
+
+# 2. Buscar patrones de API Keys reales de VozDigital (vd_ + hex) o claves privadas en el diff
+SECRET_MATCHES=$(git diff --cached -U0 | grep -E '^\+.*(vd_[a-fA-F0-9]{24,}|AKIA[0-9A-Z]{16})' || true)
+if [ -n "$SECRET_MATCHES" ]; then
+  echo "❌ [SEGURIDAD BEESENSE] Commit bloqueado: Se detectó una API Key real en los cambios:"
+  echo "   Guarda tus claves únicamente en el archivo .env (nunca dentro del código fuente)."
+  exit 1
+fi
+
+echo "✅ [Seguridad BeeSense] Verificación pre-commit superada: 0 claves expuestas."
+exit 0
