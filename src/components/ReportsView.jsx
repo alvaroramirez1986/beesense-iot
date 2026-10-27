@@ -10,8 +10,10 @@ import {
   RotateCcw,
   Clock,
   CheckCircle2,
+  Zap,
 } from 'lucide-react';
 import { exportEventsToPDF } from '../services/pdfExportService';
+import { getEventTimeHHMM } from '../services/awsApiService';
 
 /**
  * Lista desplegable de 5 ítems requerida en la especificación de la Figura 3:
@@ -34,7 +36,12 @@ export default function ReportsView({ events = [] }) {
   const [fechaHasta, setFechaHasta] = useState('');
   const [tipoEvento, setTipoEvento] = useState('TODOS');
 
-  // Filtrado combinado por Rango de Fechas y por Tipo de Evento (5 ítems)
+  // Filtro de búsqueda por Rango Horario (desactivado por defecto para optimizar el rendimiento de las consultas)
+  const [rangoHorarioActivo, setRangoHorarioActivo] = useState(false);
+  const [horaDesde, setHoraDesde] = useState('08:00');
+  const [horaHasta, setHoraHasta] = useState('20:00');
+
+  // Filtrado combinado: solo evalúa el rango horario cuando el usuario lo activa manualmente
   const filteredEvents = useMemo(() => {
     return events.filter((ev) => {
       // 1. Filtro por Tipo de Evento
@@ -52,14 +59,29 @@ export default function ReportsView({ events = [] }) {
         if (ev.isoDate > fechaHasta) return false;
       }
 
+      // 4. Filtro por Rango Horario (SOLO se ejecuta si el usuario lo activó manualmente)
+      if (rangoHorarioActivo && horaDesde && horaHasta) {
+        const evTime = getEventTimeHHMM(ev);
+        if (horaDesde <= horaHasta) {
+          // Rango diurno normal (ej. 08:00 a 20:00)
+          if (evTime < horaDesde || evTime > horaHasta) return false;
+        } else {
+          // Rango nocturno que cruza medianoche (ej. 22:00 a 06:00)
+          if (evTime < horaDesde && evTime > horaHasta) return false;
+        }
+      }
+
       return true;
     });
-  }, [events, fechaDesde, fechaHasta, tipoEvento]);
+  }, [events, fechaDesde, fechaHasta, tipoEvento, rangoHorarioActivo, horaDesde, horaHasta]);
 
   const handleResetFilters = () => {
     setFechaDesde('');
     setFechaHasta('');
     setTipoEvento('TODOS');
+    setRangoHorarioActivo(false);
+    setHoraDesde('08:00');
+    setHoraHasta('20:00');
   };
 
   const handleDownloadPDF = () => {
@@ -67,6 +89,9 @@ export default function ReportsView({ events = [] }) {
       tipoEvento,
       fechaDesde: fechaDesde || 'Inicio',
       fechaHasta: fechaHasta || 'Actualidad',
+      rangoHorarioActivo,
+      horaDesde,
+      horaHasta,
     });
   };
 
@@ -103,7 +128,7 @@ export default function ReportsView({ events = [] }) {
   return (
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-8 py-6 sm:py-8 space-y-6">
       {/* ====================================================================
-          ENCABEZADO AZUL MARINO CON BOTÓN "EXPORTAR A PDF" (Figura 3)
+          ENCABEZADO AZUL MARINO CON BOTÓN "EXPORTAR A PDF" (CON LOGO BEESENSE)
           ==================================================================== */}
       <div className="rounded-[24px] bg-[#16325B] dark:bg-[#0F2442] text-white p-6 sm:p-8 shadow-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border border-slate-700/40">
         <div>
@@ -121,14 +146,14 @@ export default function ReportsView({ events = [] }) {
           className="inline-flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl bg-white/15 hover:bg-white/25 active:scale-[0.99] text-white font-bold text-xs sm:text-sm border border-white/25 shadow-sm transition-all shrink-0"
         >
           <FileDown className="w-4 h-4 text-amber-300" />
-          <span>Exportar a PDF</span>
+          <span>Exportar a PDF (Con Logo Oficial)</span>
         </button>
       </div>
 
       {/* ====================================================================
-          BARRA DE FILTRADO POR FECHAS Y LISTA DESPLEGABLE DE 5 ÍTEMS
+          BARRA DE FILTRADO POR FECHAS, TIPO DE EVENTO Y RANGO HORARIO MANUAL
           ==================================================================== */}
-      <div className="rounded-[22px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 sm:p-6 shadow-xs">
+      <div className="rounded-[22px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 sm:p-6 shadow-xs space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
           {/* Etiqueta principal */}
           <div className="md:col-span-3 flex items-center gap-2.5 pb-1">
@@ -138,7 +163,7 @@ export default function ReportsView({ events = [] }) {
                 Filtrar Eventos
               </span>
               <span className="text-[11px] text-slate-400">
-                Rango de fechas y tipo en DynamoDB
+                Consultas optimizadas en DynamoDB
               </span>
             </div>
           </div>
@@ -202,11 +227,82 @@ export default function ReportsView({ events = [] }) {
             </button>
           </div>
         </div>
+
+        {/* ==================================================================
+            FILTRO OPCIONAL POR RANGO HORARIO (ACTIVACIÓN MANUAL POR EL USUARIO)
+            Para optimizar el rendimiento de las consultas, permanece inactivo
+            hasta que el usuario lo habilite manualmente.
+            ================================================================== */}
+        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={rangoHorarioActivo}
+              onClick={() => setRangoHorarioActivo((prev) => !prev)}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                rangoHorarioActivo ? 'bg-[#2A9D8F]' : 'bg-slate-300 dark:bg-slate-700'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                  rangoHorarioActivo ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-sm font-extrabold text-[#122B52] dark:text-white">
+                  Filtrar por Rango Horario
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800/70">
+                  <Zap className="w-3 h-3" />
+                  <span>Optimización de consulta</span>
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                {rangoHorarioActivo
+                  ? 'Filtro horario activo: acotando registros dentro de la franja horaria seleccionada.'
+                  : 'Desactivado por defecto para maximizar la velocidad de consulta.'}
+              </p>
+            </div>
+          </div>
+
+          {/* Controles de Hora Inicio y Hora Término (visibles solo al activar manualmente la opción) */}
+          {rangoHorarioActivo && (
+            <div className="flex flex-wrap items-center gap-3 bg-slate-50 dark:bg-slate-800/70 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700 animate-fadeIn">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-[#2A9D8F]" />
+                <label className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                  Hora Desde:
+                </label>
+                <input
+                  type="time"
+                  value={horaDesde}
+                  onChange={(e) => setHoraDesde(e.target.value)}
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                  Hora Hasta:
+                </label>
+                <input
+                  type="time"
+                  value={horaHasta}
+                  onChange={(e) => setHoraHasta(e.target.value)}
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ====================================================================
           LISTADO CRONOLÓGICO DE EVENTOS (Figura 3 - Mobile & Escritorio)
-          Incluye Tipo de Evento, Detalle, Fecha/Hora Inicio y Fecha/Hora Término
           ==================================================================== */}
       <div className="rounded-[24px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xs divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
         {filteredEvents.length === 0 ? (
@@ -215,7 +311,7 @@ export default function ReportsView({ events = [] }) {
               No se encontraron eventos para los filtros seleccionados
             </p>
             <p className="text-xs text-slate-400">
-              Ajuste el rango de fechas o el tipo de evento en la barra superior.
+              Ajuste el rango de fechas, el tipo de evento o la franja horaria en la barra superior.
             </p>
           </div>
         ) : (

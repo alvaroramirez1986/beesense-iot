@@ -1,10 +1,11 @@
 import React from 'react';
+import { Compass } from 'lucide-react';
 
 /**
  * Pie de Página Institucional requerido en documento:
  * "NOTA: El sitio debe tener un pie de pagina con los colores correspondientes que diga 'BeeSense 2026.'"
  */
-export default function Footer() {
+export default function Footer({ onOpen404 }) {
   return (
     <footer className="w-full mt-auto border-t border-amber-500/25 bg-gradient-to-r from-[#122B52] via-[#163564] to-[#122B52] text-white px-6 py-4 shadow-inner">
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-xs sm:text-sm">
@@ -15,9 +16,21 @@ export default function Footer() {
             BeeSense 2026.
           </span>
         </div>
-        <p className="text-[11px] sm:text-xs text-slate-300 font-medium">
-          Monitoreo Apícola IoT en Tiempo Real • AWS IoT Core &amp; Amazon DynamoDB
-        </p>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <p className="text-[11px] sm:text-xs text-slate-300 font-medium">
+            Monitoreo Apícola IoT en Tiempo Real • AWS IoT Core &amp; Amazon DynamoDB
+          </p>
+          {onOpen404 && (
+            <button
+              type="button"
+              onClick={onOpen404}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-amber-300 text-[11px] font-bold border border-white/15 transition"
+            >
+              <Compass className="w-3 h-3" />
+              <span>Vista 404</span>
+            </button>
+          )}
+        </div>
       </div>
     </footer>
   );

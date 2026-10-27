@@ -5,6 +5,7 @@ import DashboardView from './components/DashboardView';
 import ReportsView from './components/ReportsView';
 import ProfileView from './components/ProfileView';
 import AlertModals from './components/AlertModals';
+import NotFound404View from './components/NotFound404View';
 import Footer from './components/Footer';
 import {
   buildTenMinuteSeries,
@@ -15,12 +16,32 @@ import {
   registerEventEndInDynamoDB,
   registerEventStartInDynamoDB,
   toISODateString,
+  toTimeHHMM24,
 } from './services/awsApiService';
 
 export default function App() {
-  // 1. Estado de Autenticación y Navegación Principal
+  // 1. Estado de Autenticación, Navegación Principal y Detección de Ruta 404
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [show404Page, setShow404Page] = useState(() => {
+    const hash = window.location.hash;
+    return hash === '#/404' || (hash && !['#/', '#/login', '#/dashboard', '#/reportes', '#/cuenta'].includes(hash));
+  });
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (hash === '#/404') {
+        setShow404Page(true);
+      } else if (['', '#/', '#/login', '#/dashboard', '#/reportes', '#/cuenta'].includes(hash)) {
+        setShow404Page(false);
+      } else {
+        setShow404Page(true);
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   // 2. Modo Oscuro para descanso visual (sobre botón Cerrar Sesión)
   const [darkMode, setDarkMode] = useState(() => {
@@ -97,13 +118,12 @@ export default function App() {
     const now = new Date();
     const formattedNow = formatDateTimeCL(now);
     const isoDate = toISODateString(now);
+    const horaInicio24 = toTimeHHMM24(now);
 
-    // Helper para abrir o cerrar un tipo de evento en DynamoDB
     const handleCategoryTransition = async (categoryKey, isAnomalyActive, buildEventPayload) => {
       const currentActiveId = activeEventsRef.current[categoryKey];
 
       if (isAnomalyActive && !currentActiveId) {
-        // Inicia un nuevo evento crítico -> Guardar en DynamoDB
         const newEventId = `EVT-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
         activeEventsRef.current[categoryKey] = newEventId;
 
@@ -114,13 +134,13 @@ export default function App() {
           fechaInicio: formattedNow,
           fechaTermino: 'En curso (Activa)',
           isoDate,
+          horaInicio24,
           estadoEvento: 'ACTIVO',
         };
 
         const updatedList = await registerEventStartInDynamoDB(payload);
         setEvents(updatedList);
       } else if (!isAnomalyActive && currentActiveId) {
-        // El parámetro volvió a su rango normal -> Registrar Fecha y Hora de Término en DynamoDB
         activeEventsRef.current[categoryKey] = null;
         const updatedList = await registerEventEndInDynamoDB(
           currentActiveId,
@@ -145,7 +165,7 @@ export default function App() {
     // 2. ESTADO DE TAPADA (Tapa ABIERTA)
     const isLidAnomaly = status.tapaStatus === 'OPEN_BLINK_ALERT';
     if (isLidAnomaly && !activeEventsRef.current['ESTADO DE TAPADA']) {
-      setShowLidModal(true); // Dispara ventana emergente Figura 5
+      setShowLidModal(true);
     }
     await handleCategoryTransition('ESTADO DE TAPADA', isLidAnomaly, () => ({
       titulo: 'Alerta Estado de Tapada',
@@ -157,7 +177,7 @@ export default function App() {
       status.bateriaStatus === 'CRITICAL_BLINK_10' ||
       status.bateriaStatus === 'LOW_ALERT_20';
     if (isBatteryAnomaly && !activeEventsRef.current['ESTADO DE BATERIA']) {
-      setShowBatteryModal(true); // Dispara ventana emergente Figura 6
+      setShowBatteryModal(true);
     }
     await handleCategoryTransition('ESTADO DE BATERIA', isBatteryAnomaly, () => ({
       titulo: 'Alerta Estado de Batería',
@@ -172,14 +192,12 @@ export default function App() {
     }));
   }, []);
 
-  // Evaluar cada cambio de telemetría
   useEffect(() => {
     if (isAuthenticated) {
       syncAnomaliesWithDynamoDB(telemetry);
     }
   }, [telemetry, isAuthenticated, syncAnomaliesWithDynamoDB]);
 
-  // Suscripción periódica al endpoint AWS API Gateway (o micro-variación orgánica de sensores en línea)
   useEffect(() => {
     if (!isAuthenticated) return;
 
@@ -190,7 +208,6 @@ export default function App() {
         return;
       }
 
-      // Si no hay endpoint remoto configurado aún, mantiene fluctuación orgánica realista en sensores conectados
       setTelemetry((prev) => {
         if (prev.tempInterior === null) return prev;
         const deltaInt = (Math.random() - 0.5) * 0.16;
@@ -209,7 +226,6 @@ export default function App() {
     return () => clearInterval(interval);
   }, [isAuthenticated]);
 
-  // Handler para actualizar telemetría desde el emulador de pruebas o AWS IoT
   const handleSimulateTelemetryChange = (partialUpdate) => {
     setTelemetry((prev) => {
       const next = { ...prev, ...partialUpdate, timestamp: new Date().toISOString() };
@@ -230,14 +246,33 @@ export default function App() {
     });
   };
 
+  // Si se activa una ruta inexistente o la vista de Error 404
+  if (show404Page) {
+    return (
+      <NotFound404View
+        darkMode={darkMode}
+        isAuthenticated={isAuthenticated}
+        onReturnHome={() => {
+          window.history.replaceState(null, '', window.location.pathname);
+          setShow404Page(false);
+        }}
+      />
+    );
+  }
+
   // Si no ha iniciado sesión, muestra la Pantalla de Login (Figura 1)
   if (!isAuthenticated) {
-    return <LoginScreen onLoginSuccess={() => setIsAuthenticated(true)} />;
+    return (
+      <LoginScreen
+        onLoginSuccess={() => setIsAuthenticated(true)}
+        onOpen404Preview={() => setShow404Page(true)}
+      />
+    );
   }
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-[#F4F7FB] dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300">
-      {/* Navegación Lateral (Escritorio) y Barra Superior (Mobile) */}
+      {/* Navegación Lateral (Escritorio) y Barra Superior Hamburguesa (Mobile) */}
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -270,7 +305,7 @@ export default function App() {
         </main>
 
         {/* Pie de página institucional requerido: "BeeSense 2026." */}
-        <Footer />
+        <Footer onOpen404={() => setShow404Page(true)} />
       </div>
 
       {/* Modales Emergentes Prioritarios (Figuras 5 y 6 + Confirmación de Logout) */}

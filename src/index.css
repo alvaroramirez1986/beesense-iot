@@ -18,81 +18,76 @@
   }
 }
 
-@keyframes cellGlow {
-  0%, 100% {
-    opacity: 0.15;
-    transform: scale(0.96);
-  }
-  50% {
-    opacity: 0.65;
-    transform: scale(1.06);
-  }
-}
-
 @keyframes beeFlightPath1 {
-  0% {
-    transform: translate(-10vw, 72vh) rotate(18deg) scale(0.95);
-  }
-  25% {
-    transform: translate(26vw, 48vh) rotate(-8deg) scale(1.05);
-  }
-  50% {
-    transform: translate(62vw, 62vh) rotate(14deg) scale(1);
-  }
-  75% {
-    transform: translate(84vw, 28vh) rotate(-12deg) scale(0.92);
-  }
-  100% {
-    transform: translate(112vw, 18vh) rotate(10deg) scale(0.95);
-  }
+  0%   { transform: translate(-12vw, 18vh) rotate(14deg) scale(0.95); }
+  25%  { transform: translate(24vw, 10vh) rotate(-6deg) scale(1.05); }
+  50%  { transform: translate(58vw, 22vh) rotate(12deg) scale(1); }
+  75%  { transform: translate(84vw, 12vh) rotate(-10deg) scale(0.95); }
+  100% { transform: translate(112vw, 20vh) rotate(8deg) scale(0.95); }
 }
 
 @keyframes beeFlightPath2 {
-  0% {
-    transform: translate(110vw, 24vh) rotate(-165deg) scale(0.85);
-  }
-  30% {
-    transform: translate(74vw, 44vh) rotate(-190deg) scale(0.95);
-  }
-  65% {
-    transform: translate(32vw, 22vh) rotate(-170deg) scale(0.9);
-  }
-  100% {
-    transform: translate(-12vw, 42vh) rotate(-180deg) scale(0.85);
-  }
+  0%   { transform: translate(112vw, 28vh) rotate(-168deg) scale(0.9); }
+  30%  { transform: translate(74vw, 42vh) rotate(-188deg) scale(1); }
+  65%  { transform: translate(32vw, 24vh) rotate(-172deg) scale(0.92); }
+  100% { transform: translate(-14vw, 36vh) rotate(-180deg) scale(0.88); }
 }
 
 @keyframes beeFlightPath3 {
-  0% {
-    transform: translate(18vw, 108vh) rotate(-35deg) scale(0.8);
-  }
-  35% {
-    transform: translate(42vw, 72vh) rotate(-15deg) scale(0.9);
-  }
-  70% {
-    transform: translate(78vw, 54vh) rotate(-40deg) scale(0.85);
-  }
-  100% {
-    transform: translate(96vw, -12vh) rotate(-25deg) scale(0.8);
-  }
+  0%   { transform: translate(-12vw, 76vh) rotate(-18deg) scale(0.92); }
+  35%  { transform: translate(30vw, 62vh) rotate(10deg) scale(1.02); }
+  70%  { transform: translate(72vw, 80vh) rotate(-14deg) scale(0.96); }
+  100% { transform: translate(112vw, 66vh) rotate(6deg) scale(0.9); }
+}
+
+@keyframes beeFlightPath4 {
+  0%   { transform: translate(112vw, 82vh) rotate(-162deg) scale(0.88); }
+  30%  { transform: translate(68vw, 68vh) rotate(-192deg) scale(0.98); }
+  65%  { transform: translate(26vw, 86vh) rotate(-168deg) scale(0.92); }
+  100% { transform: translate(-14vw, 72vh) rotate(-178deg) scale(0.86); }
+}
+
+@keyframes beeFlightPath5 {
+  0%   { transform: translate(12vw, 108vh) rotate(-42deg) scale(0.85); }
+  35%  { transform: translate(38vw, 70vh) rotate(-22deg) scale(0.95); }
+  70%  { transform: translate(66vw, 34vh) rotate(-48deg) scale(0.9); }
+  100% { transform: translate(92vw, -12vh) rotate(-30deg) scale(0.85); }
+}
+
+@keyframes beeFlightPath6 {
+  0%   { transform: translate(88vw, -12vh) rotate(135deg) scale(0.86); }
+  35%  { transform: translate(62vw, 28vh) rotate(150deg) scale(0.95); }
+  70%  { transform: translate(28vw, 66vh) rotate(125deg) scale(0.9); }
+  100% { transform: translate(8vw, 108vh) rotate(140deg) scale(0.84); }
+}
+
+@keyframes beeFlightPath7 {
+  0%   { transform: translate(-10vw, 48vh) rotate(8deg) scale(0.88); }
+  50%  { transform: translate(50vw, 36vh) rotate(-12deg) scale(1.04); }
+  100% { transform: translate(112vw, 52vh) rotate(10deg) scale(0.9); }
+}
+
+@keyframes beeFlightPath8 {
+  0%   { transform: translate(112vw, 12vh) rotate(-174deg) scale(0.82); }
+  50%  { transform: translate(46vw, 20vh) rotate(-160deg) scale(0.94); }
+  100% { transform: translate(-12vw, 10vh) rotate(-178deg) scale(0.84); }
+}
+
+@keyframes beeOrbitPatrol {
+  0%, 100% { transform: translate(0px, 0px) rotate(6deg); }
+  25%      { transform: translate(22px, -18px) rotate(-10deg); }
+  50%      { transform: translate(8px, -32px) rotate(12deg); }
+  75%      { transform: translate(-18px, -14px) rotate(-8deg); }
 }
 
 @keyframes beeFloatLocal {
-  0%, 100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-10px) rotate(6deg);
-  }
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50%      { transform: translateY(-9px) rotate(6deg); }
 }
 
 @keyframes wingFlutter {
-  0%, 100% {
-    transform: scaleY(1) rotate(4deg);
-  }
-  50% {
-    transform: scaleY(0.55) rotate(-12deg);
-  }
+  0%, 100% { transform: scaleY(1) rotate(5deg); }
+  50%      { transform: scaleY(0.5) rotate(-14deg); }
 }
 
 @keyframes criticalCardBlink {
@@ -115,25 +110,23 @@
   animation: honeycombShift 26s linear infinite;
 }
 
-.bee-flight-1 {
-  animation: beeFlightPath1 19s ease-in-out infinite;
-}
-
-.bee-flight-2 {
-  animation: beeFlightPath2 23s ease-in-out infinite;
-}
-
-.bee-flight-3 {
-  animation: beeFlightPath3 17s ease-in-out infinite;
-}
+.bee-flight-1 { animation: beeFlightPath1 15s linear infinite; }
+.bee-flight-2 { animation: beeFlightPath2 18s linear infinite; }
+.bee-flight-3 { animation: beeFlightPath3 16s linear infinite; }
+.bee-flight-4 { animation: beeFlightPath4 20s linear infinite; }
+.bee-flight-5 { animation: beeFlightPath5 14s linear infinite; }
+.bee-flight-6 { animation: beeFlightPath6 17s linear infinite; }
+.bee-flight-7 { animation: beeFlightPath7 13s linear infinite; }
+.bee-flight-8 { animation: beeFlightPath8 19s linear infinite; }
+.bee-orbit    { animation: beeOrbitPatrol 7s ease-in-out infinite; }
 
 .bee-hover-float {
-  animation: beeFloatLocal 3.2s ease-in-out infinite;
+  animation: beeFloatLocal 2.8s ease-in-out infinite;
 }
 
 .bee-wing {
   transform-origin: center bottom;
-  animation: wingFlutter 0.14s ease-in-out infinite;
+  animation: wingFlutter 0.12s ease-in-out infinite;
 }
 
 .critical-blink-alert {

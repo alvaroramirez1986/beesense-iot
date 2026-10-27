@@ -45,6 +45,34 @@ export function toISODateString(dateInput = new Date()) {
 }
 
 /**
+ * Formatea una fecha a HH:MM (formato 24h) para consultas por rango horario
+ */
+export function toTimeHHMM24(dateInput = new Date()) {
+  const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/**
+ * Extrae la hora en formato 24h (HH:MM) desde un objeto de evento
+ */
+export function getEventTimeHHMM(ev) {
+  if (ev.horaInicio24) return ev.horaInicio24;
+  if (ev.fechaInicio) {
+    const match = String(ev.fechaInicio).match(/(\d{1,2}):(\d{2}):\d{2}\s*(a\.\s*m\.|p\.\s*m\.)?/i);
+    if (match) {
+      let hours = parseInt(match[1], 10);
+      const minutes = match[2];
+      const period = (match[3] || '').toLowerCase();
+      if (period.includes('p') && hours < 12) hours += 12;
+      if (period.includes('a') && hours === 12) hours = 0;
+      return `${String(hours).padStart(2, '0')}:${minutes}`;
+    }
+  }
+  return '00:00';
+}
+
+/**
  * Genera la ventana de etiquetas del eje X en intervalos de 10 minutos
  * (ej. últimos 10 puntos separados cada 10 minutos)
  */
