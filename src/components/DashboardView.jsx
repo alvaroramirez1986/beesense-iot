@@ -174,7 +174,7 @@ export default function DashboardView({
               onClick={() => onSimulateTelemetryChange({ tempInterior: 36.8 })}
               className="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600 text-white hover:bg-red-700 transition"
             >
-              🌡️ Temp. ≥ 36.1°C (Rojo)
+              🌡️ Temp. &gt; 36°C (Parpadeo + Alerta)
             </button>
 
             <button
@@ -182,7 +182,7 @@ export default function DashboardView({
               onClick={() => onSimulateTelemetryChange({ tempInterior: 13.4 })}
               className="px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-700 text-white hover:bg-rose-800 transition"
             >
-              ❄️ Temp. &lt; 15°C (Parpadeo)
+              ❄️ Temp. &lt; 15°C (Parpadeo + Alerta)
             </button>
 
             <button
@@ -190,7 +190,7 @@ export default function DashboardView({
               onClick={() => onSimulateTelemetryChange({ estadoTapa: 'ABIERTA' })}
               className="px-3 py-1.5 rounded-lg text-xs font-bold bg-orange-600 text-white hover:bg-orange-700 transition"
             >
-              🚨 Abrir Tapa (Modal + Parpadeo)
+              🚨 Abrir Tapa (Modal + SMS)
             </button>
 
             <button
@@ -219,7 +219,7 @@ export default function DashboardView({
               }
               className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-700 text-white hover:bg-slate-800 transition"
             >
-              🔌 Desconectar Sensor (N/A)
+              🔌 Sensor N/A (Parpadeo + Alerta)
             </button>
           </div>
         </div>
@@ -238,12 +238,10 @@ export default function DashboardView({
         {/* TARJETA 1: TEMPERATURA INTERIOR */}
         <div
           className={`relative rounded-[22px] p-6 transition-all duration-300 shadow-[0_8px_24px_-6px_rgba(15,23,42,0.07)] border ${
-            tempStatus === 'LOW_BLINK_ALERT'
+            tempStatus === 'LOW_BLINK_ALERT' || tempStatus === 'HIGH_ALERT'
               ? 'bg-[#FFF1F1] dark:bg-red-950/60 border-red-400 border-l-[6px] border-l-red-600 critical-blink-alert'
-              : tempStatus === 'HIGH_ALERT'
-              ? 'bg-[#FFF1F1] dark:bg-red-950/45 border-red-200 dark:border-red-800/80 border-l-[6px] border-l-red-500'
               : tempStatus === 'NA'
-              ? 'bg-slate-100/90 dark:bg-slate-900 border-slate-300 dark:border-slate-700 border-l-[6px] border-l-slate-400'
+              ? 'bg-slate-100/90 dark:bg-slate-900 border-red-400 dark:border-red-700 border-l-[6px] border-l-red-500 na-blink-alert'
               : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 border-l-[6px] border-l-amber-400'
           }`}
         >
@@ -253,7 +251,7 @@ export default function DashboardView({
                 tempStatus === 'HIGH_ALERT' || tempStatus === 'LOW_BLINK_ALERT'
                   ? 'bg-red-100 dark:bg-red-900/60 text-red-600 dark:text-red-300'
                   : tempStatus === 'NA'
-                  ? 'bg-slate-200 dark:bg-slate-800 text-slate-500'
+                  ? 'bg-red-100 dark:bg-red-950/70 text-red-600 dark:text-red-400'
                   : 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400'
               }`}
             >
@@ -264,7 +262,7 @@ export default function DashboardView({
               )}
             </div>
 
-            {(tempStatus === 'HIGH_ALERT' || tempStatus === 'LOW_BLINK_ALERT') && (
+            {(tempStatus === 'HIGH_ALERT' || tempStatus === 'LOW_BLINK_ALERT' || tempStatus === 'NA') && (
               <AlertTriangle className="w-5 h-5 text-red-500 dark:text-red-400" />
             )}
           </div>
@@ -272,21 +270,31 @@ export default function DashboardView({
           <p className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
             TEMP. INTERIOR
           </p>
-          <div className="flex items-baseline gap-2">
+          <div className="flex items-baseline gap-2 flex-wrap">
             <span
               className={`text-3xl sm:text-4xl font-extrabold tracking-tight ${
                 tempStatus === 'HIGH_ALERT' || tempStatus === 'LOW_BLINK_ALERT'
                   ? 'text-red-600 dark:text-red-400'
                   : tempStatus === 'NA'
-                  ? 'text-slate-400 dark:text-slate-500'
+                  ? 'text-red-600 dark:text-red-400'
                   : 'text-[#122B52] dark:text-white'
               }`}
             >
               {displayTempInt}
             </span>
+            {tempStatus === 'HIGH_ALERT' && (
+              <span className="text-[11px] font-bold uppercase px-2 py-0.5 rounded-md bg-red-600 text-white">
+                ALTA CRÍTICA
+              </span>
+            )}
             {tempStatus === 'LOW_BLINK_ALERT' && (
               <span className="text-[11px] font-bold uppercase px-2 py-0.5 rounded-md bg-red-600 text-white">
                 BAJA CRÍTICA
+              </span>
+            )}
+            {tempStatus === 'NA' && (
+              <span className="text-[11px] font-bold uppercase px-2 py-0.5 rounded-md bg-red-600 text-white">
+                SIN SEÑAL
               </span>
             )}
           </div>
@@ -296,17 +304,22 @@ export default function DashboardView({
         <div
           className={`relative rounded-[22px] p-6 transition-all duration-300 shadow-[0_8px_24px_-6px_rgba(15,23,42,0.07)] border ${
             climaExteriorStatus === 'NA'
-              ? 'bg-slate-100/90 dark:bg-slate-900 border-slate-300 dark:border-slate-700 border-l-[6px] border-l-slate-400'
+              ? 'bg-slate-100/90 dark:bg-slate-900 border-red-400 dark:border-red-700 border-l-[6px] border-l-red-500 na-blink-alert'
               : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 border-l-[6px] border-l-[#2A9D8F]'
           }`}
         >
-          <div className="flex items-center gap-2.5 mb-5">
-            <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-              <Thermometer className="w-6 h-6" />
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2.5">
+              <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                <Thermometer className="w-6 h-6" />
+              </div>
+              <div className="w-12 h-12 rounded-full bg-teal-50 dark:bg-teal-950/60 text-[#2A9D8F] dark:text-teal-400 flex items-center justify-center">
+                <Droplets className="w-6 h-6" />
+              </div>
             </div>
-            <div className="w-12 h-12 rounded-full bg-teal-50 dark:bg-teal-950/60 text-[#2A9D8F] dark:text-teal-400 flex items-center justify-center">
-              <Droplets className="w-6 h-6" />
-            </div>
+            {climaExteriorStatus === 'NA' && (
+              <AlertTriangle className="w-5 h-5 text-red-500 dark:text-red-400" />
+            )}
           </div>
 
           <p className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
@@ -314,9 +327,14 @@ export default function DashboardView({
           </p>
 
           {climaExteriorStatus === 'NA' ? (
-            <span className="text-3xl sm:text-4xl font-extrabold text-slate-400 dark:text-slate-500">
-              N/A
-            </span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl sm:text-4xl font-extrabold text-red-600 dark:text-red-400">
+                N/A
+              </span>
+              <span className="text-[11px] font-bold uppercase px-2 py-0.5 rounded-md bg-red-600 text-white">
+                SIN SEÑAL
+              </span>
+            </div>
           ) : (
             <div className="flex items-baseline gap-2.5 flex-wrap">
               <span className="text-2xl sm:text-3xl font-extrabold text-[#122B52] dark:text-white">
@@ -336,7 +354,7 @@ export default function DashboardView({
             tapaStatus === 'OPEN_BLINK_ALERT'
               ? 'bg-[#FFF5EB] dark:bg-orange-950/55 border-orange-300 dark:border-orange-800 border-l-[6px] border-l-orange-500 critical-blink-alert'
               : tapaStatus === 'NA'
-              ? 'bg-slate-100/90 dark:bg-slate-900 border-slate-300 dark:border-slate-700 border-l-[6px] border-l-slate-400'
+              ? 'bg-slate-100/90 dark:bg-slate-900 border-red-400 dark:border-red-700 border-l-[6px] border-l-red-500 na-blink-alert'
               : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 border-l-[6px] border-l-[#122B52] dark:border-l-amber-500'
           }`}
         >
@@ -346,12 +364,14 @@ export default function DashboardView({
                 tapaStatus === 'OPEN_BLINK_ALERT'
                   ? 'bg-orange-100 dark:bg-orange-900/60 text-orange-600 dark:text-orange-300'
                   : tapaStatus === 'NA'
-                  ? 'bg-slate-200 dark:bg-slate-800 text-slate-500'
+                  ? 'bg-red-100 dark:bg-red-950/70 text-red-600 dark:text-red-400'
                   : 'bg-slate-100 dark:bg-slate-800 text-[#122B52] dark:text-slate-200'
               }`}
             >
               {tapaStatus === 'OPEN_BLINK_ALERT' ? (
                 <ShieldAlert className="w-6 h-6" />
+              ) : tapaStatus === 'NA' ? (
+                <WifiOff className="w-6 h-6" />
               ) : (
                 <Box className="w-6 h-6" />
               )}
@@ -360,6 +380,11 @@ export default function DashboardView({
             {tapaStatus === 'OPEN_BLINK_ALERT' && (
               <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-orange-600 text-white shadow-xs">
                 ALERTA
+              </span>
+            )}
+            {tapaStatus === 'NA' && (
+              <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold uppercase bg-red-600 text-white">
+                SIN SEÑAL
               </span>
             )}
           </div>
@@ -372,7 +397,7 @@ export default function DashboardView({
               tapaStatus === 'OPEN_BLINK_ALERT'
                 ? 'text-orange-600 dark:text-orange-400'
                 : tapaStatus === 'NA'
-                ? 'text-slate-400 dark:text-slate-500'
+                ? 'text-red-600 dark:text-red-400'
                 : 'text-[#122B52] dark:text-white'
             }`}
           >
@@ -388,7 +413,7 @@ export default function DashboardView({
               : bateriaStatus === 'LOW_ALERT_20'
               ? 'bg-[#FFF1F1] dark:bg-red-950/45 border-red-200 dark:border-red-800 border-l-[6px] border-l-red-500'
               : bateriaStatus === 'NA'
-              ? 'bg-slate-100/90 dark:bg-slate-900 border-slate-300 dark:border-slate-700 border-l-[6px] border-l-slate-400'
+              ? 'bg-slate-100/90 dark:bg-slate-900 border-red-400 dark:border-red-700 border-l-[6px] border-l-red-500 na-blink-alert'
               : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 border-l-[6px] border-l-emerald-500'
           }`}
         >
@@ -398,16 +423,23 @@ export default function DashboardView({
                 bateriaStatus === 'CRITICAL_BLINK_10' || bateriaStatus === 'LOW_ALERT_20'
                   ? 'bg-red-100 dark:bg-red-900/60 text-red-600 dark:text-red-300'
                   : bateriaStatus === 'NA'
-                  ? 'bg-slate-200 dark:bg-slate-800 text-slate-500'
+                  ? 'bg-red-100 dark:bg-red-950/70 text-red-600 dark:text-red-400'
                   : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400'
               }`}
             >
               {bateriaStatus === 'CRITICAL_BLINK_10' || bateriaStatus === 'LOW_ALERT_20' ? (
                 <BatteryWarning className="w-6 h-6" />
+              ) : bateriaStatus === 'NA' ? (
+                <WifiOff className="w-6 h-6" />
               ) : (
                 <Battery className="w-6 h-6" />
               )}
             </div>
+            {bateriaStatus === 'NA' && (
+              <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold uppercase bg-red-600 text-white">
+                SIN SEÑAL
+              </span>
+            )}
           </div>
 
           <p className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
@@ -420,7 +452,7 @@ export default function DashboardView({
                 bateriaStatus === 'CRITICAL_BLINK_10' || bateriaStatus === 'LOW_ALERT_20'
                   ? 'text-red-600 dark:text-red-400'
                   : bateriaStatus === 'NA'
-                  ? 'text-slate-400 dark:text-slate-500'
+                  ? 'text-red-600 dark:text-red-400'
                   : 'text-[#122B52] dark:text-white'
               }`}
             >

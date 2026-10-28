@@ -89,8 +89,10 @@ export default function App() {
   // 6. Historial de Eventos almacenados en Amazon DynamoDB
   const [events, setEvents] = useState([]);
 
-  // 7. Modales Prioritarios (Figuras 5 y 6 + Confirmación de Logout)
+  // 7. Modales Prioritarios (Tapa, Temperatura, Sensores N/A, Batería y Confirmación de Logout)
   const [showLidModal, setShowLidModal] = useState(false);
+  const [showTempModal, setShowTempModal] = useState(false);
+  const [showSensorNAModal, setShowSensorNAModal] = useState(false);
   const [showBatteryModal, setShowBatteryModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [smsStatusInfo, setSmsStatusInfo] = useState(null);
@@ -155,14 +157,17 @@ export default function App() {
       }
     };
 
-    // 1. TEMPERATURA (>= 36.1 °C o < 15.0 °C)
+    // 1. TEMPERATURA (> 36.0 °C o < 15.0 °C)
     const isTempAnomaly =
       status.tempStatus === 'HIGH_ALERT' || status.tempStatus === 'LOW_BLINK_ALERT';
+    if (isTempAnomaly && !activeEventsRef.current['TEMPERATURA']) {
+      setShowTempModal(true);
+    }
     await handleCategoryTransition('TEMPERATURA', isTempAnomaly, () => ({
       titulo: 'Alerta Temperatura',
       detalle:
         status.tempStatus === 'HIGH_ALERT'
-          ? `Temperatura interior crítica alta: ${Number(currentTelemetry.tempInterior).toFixed(1)}°C (Umbral ≥ 36.1°C)`
+          ? `Temperatura interior crítica alta: ${Number(currentTelemetry.tempInterior).toFixed(1)}°C (Umbral > 36°C)`
           : `Temperatura interior crítica baja: ${Number(currentTelemetry.tempInterior).toFixed(1)}°C (Umbral < 15.0°C)`,
     }));
 
@@ -216,6 +221,9 @@ export default function App() {
 
     // 4. N/A (Pérdida de conectividad en uno o más sensores)
     const isSensorNA = status.anySensorDisconnected;
+    if (isSensorNA && !activeEventsRef.current['N/A']) {
+      setShowSensorNAModal(true);
+    }
     await handleCategoryTransition('N/A', isSensorNA, () => ({
       titulo: 'Alerta Sensor Sin Señal (N/A)',
       detalle: 'Pérdida de conectividad detectada en sonda(s) del nodo telemétrico (lectura N/A)',
@@ -338,11 +346,16 @@ export default function App() {
         <Footer onOpen404={() => setShow404Page(true)} />
       </div>
 
-      {/* Modales Emergentes Prioritarios (Figuras 5 y 6 + Confirmación de Logout) */}
+      {/* Modales Emergentes Prioritarios */}
       <AlertModals
         showLidModal={showLidModal}
         onDismissLidModal={() => setShowLidModal(false)}
         smsStatusInfo={smsStatusInfo}
+        showTempModal={showTempModal}
+        tempValue={telemetry.tempInterior}
+        onDismissTempModal={() => setShowTempModal(false)}
+        showSensorNAModal={showSensorNAModal}
+        onDismissSensorNAModal={() => setShowSensorNAModal(false)}
         showBatteryModal={showBatteryModal}
         onDismissBatteryModal={() => setShowBatteryModal(false)}
         showLogoutModal={showLogoutModal}

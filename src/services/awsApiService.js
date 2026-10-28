@@ -276,10 +276,10 @@ export function evaluateTelemetryStatus(telemetry) {
   let tempStatus = 'NORMAL'; // 'NORMAL' | 'HIGH_ALERT' | 'LOW_BLINK_ALERT' | 'NA'
   if (tempInterior === null || tempInterior === undefined || Number.isNaN(Number(tempInterior))) {
     tempStatus = 'NA';
-  } else if (Number(tempInterior) >= 36.1) {
-    tempStatus = 'HIGH_ALERT'; // >= 36.1 °C cambia a rojo
+  } else if (Number(tempInterior) > 36.0) {
+    tempStatus = 'HIGH_ALERT'; // > 36 °C cambia a rojo, parpadea y emite alerta
   } else if (Number(tempInterior) < 15.0) {
-    tempStatus = 'LOW_BLINK_ALERT'; // < 15 °C cambia a rojo y parpadea
+    tempStatus = 'LOW_BLINK_ALERT'; // < 15 °C cambia a rojo, parpadea y emite alerta
   }
 
   // 2. Evaluación Clima Exterior (DHT22)
