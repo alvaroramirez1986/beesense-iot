@@ -526,7 +526,7 @@ export default function DashboardView({
               </div>
               <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
                 <span className="w-3.5 h-3.5 rounded-full bg-red-500" />
-                <span>Pico &gt; 36°C</span>
+                <span>Umbral &gt; 36°C</span>
               </div>
             </div>
 
@@ -754,7 +754,7 @@ export default function DashboardView({
                   />
                   <Tooltip
                     formatter={(val, name) => [
-                      `${Number(val).toFixed(1)} °C${Number(val) > 36 ? ' (Pico > 36°C)' : ''}`,
+                      `${Number(val).toFixed(1)} °C${Number(val) > 36 ? ' (Umbral > 36°C)' : ''}`,
                       name === 'interior' ? 'Temp. Interior' : 'Temp. Exterior',
                     ]}
                   />
