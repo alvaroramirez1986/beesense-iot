@@ -86,8 +86,37 @@ export default function App() {
   // 5. Serie Temporal Histórica en intervalos de 10 minutos (Eje X cada 10 min)
   const [chartData, setChartData] = useState(() => buildTenMinuteSeries(34.2, 24.8));
 
-  // 6. Historial de Eventos almacenados en Amazon DynamoDB
+  // 6. Historial de Eventos almacenados en Amazon DynamoDB + Control de Notificaciones No Leídas
   const [events, setEvents] = useState([]);
+  const [seenEventIds, setSeenEventIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('beesense_seen_event_ids_v1');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  // Al entrar a la sección de Reportes, se marcan todos los eventos actuales como vistos
+  // para que el contador desaparezca y solo vuelva a notificar ante nuevos eventos no visitados.
+  useEffect(() => {
+    if (activeTab === 'reportes' && events.length > 0) {
+      setSeenEventIds((prev) => {
+        const merged = Array.from(new Set([...prev, ...events.map((ev) => ev.id)]));
+        if (merged.length !== prev.length) {
+          try {
+            localStorage.setItem('beesense_seen_event_ids_v1', JSON.stringify(merged));
+          } catch (e) {}
+          return merged;
+        }
+        return prev;
+      });
+    }
+  }, [activeTab, events]);
+
+  const unreadEventsCount = activeTab === 'reportes'
+    ? 0
+    : events.filter((ev) => !seenEventIds.includes(ev.id)).length;
 
   // 7. Modales Prioritarios (Tapa, Temperatura, Sensores N/A, Batería y Confirmación de Logout)
   const [showLidModal, setShowLidModal] = useState(false);
@@ -264,24 +293,29 @@ export default function App() {
     return () => clearInterval(interval);
   }, [isAuthenticated]);
 
+  // Sincroniza el punto actual del gráfico cada vez que cambia la lectura de temperatura
+  useEffect(() => {
+    if (telemetry.tempInterior !== null && telemetry.tempExterior !== null) {
+      setChartData((prevChart) => {
+        const updated = [...prevChart];
+        if (updated.length > 0) {
+          updated[updated.length - 1] = {
+            ...updated[updated.length - 1],
+            interior: Number(telemetry.tempInterior),
+            exterior: Number(telemetry.tempExterior),
+          };
+        }
+        return updated;
+      });
+    }
+  }, [telemetry.tempInterior, telemetry.tempExterior]);
+
   const handleSimulateTelemetryChange = (partialUpdate) => {
-    setTelemetry((prev) => {
-      const next = { ...prev, ...partialUpdate, timestamp: new Date().toISOString() };
-      if (next.tempInterior !== null && next.tempExterior !== null) {
-        setChartData((prevChart) => {
-          const updated = [...prevChart];
-          if (updated.length > 0) {
-            updated[updated.length - 1] = {
-              ...updated[updated.length - 1],
-              interior: Number(next.tempInterior),
-              exterior: Number(next.tempExterior),
-            };
-          }
-          return updated;
-        });
-      }
-      return next;
-    });
+    setTelemetry((prev) => ({
+      ...prev,
+      ...partialUpdate,
+      timestamp: new Date().toISOString(),
+    }));
   };
 
   // Si se activa una ruta inexistente o la vista de Error 404
@@ -314,7 +348,7 @@ export default function App() {
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        eventsCount={events.length}
+        eventsCount={unreadEventsCount}
         darkMode={darkMode}
         onToggleDarkMode={() => setDarkMode((prev) => !prev)}
         onRequestLogout={() => setShowLogoutModal(true)}

@@ -19,6 +19,7 @@ import {
   Area,
   BarChart,
   Bar,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -86,6 +87,29 @@ export default function DashboardView({
     tempStatus !== 'NA' && climaExteriorStatus !== 'NA'
       ? (Number(telemetry.tempInterior) - Number(telemetry.tempExterior)).toFixed(1)
       : null;
+
+  // Cálculo dinámico de puntos de corte en gradientes SVG para pintar en ROJO todo pico > 36°C
+  const computeThresholdSplits = (key) => {
+    const vals = (chartData || []).map((d) => Number(d[key]) || 0);
+    if (!vals.length) return { strokeOffset: '0%', fillOffset: '0%' };
+    const maxVal = Math.max(...vals);
+    const minVal = Math.min(...vals);
+
+    if (maxVal <= 36.0) {
+      return { strokeOffset: '0%', fillOffset: '0%' };
+    }
+    const strokeRatio =
+      minVal >= 36.0 ? 1 : Math.min(1, Math.max(0, (maxVal - 36.0) / (maxVal - minVal)));
+    const fillRatio = Math.min(1, Math.max(0, (maxVal - 36.0) / Math.max(maxVal, 0.01)));
+    return {
+      strokeOffset: `${(strokeRatio * 100).toFixed(2)}%`,
+      fillOffset: `${(fillRatio * 100).toFixed(2)}%`,
+    };
+  };
+
+  const intSplits = computeThresholdSplits('interior');
+  const extSplits = computeThresholdSplits('exterior');
+  const reversedChartData = [...chartData].reverse();
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-8 space-y-6">
@@ -489,9 +513,9 @@ export default function DashboardView({
             </p>
           </div>
 
-          {/* Leyenda de series Interior y Exterior */}
+          {/* Leyenda de series Interior, Exterior y Picos > 36°C */}
           <div className="flex flex-wrap items-center justify-between sm:justify-end gap-4 text-xs sm:text-sm font-bold">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
                 <span className="w-3.5 h-3.5 rounded-full bg-[#D99B26]" />
                 <span>Interior</span>
@@ -499,6 +523,10 @@ export default function DashboardView({
               <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
                 <span className="w-3.5 h-3.5 rounded-full bg-[#2A9D8F]" />
                 <span>Exterior</span>
+              </div>
+              <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                <span className="w-3.5 h-3.5 rounded-full bg-red-500" />
+                <span>Pico &gt; 36°C</span>
               </div>
             </div>
 
@@ -545,7 +573,13 @@ export default function DashboardView({
               <span className="block text-[10px] font-extrabold uppercase text-amber-600 dark:text-amber-400">
                 Cámara Cría
               </span>
-              <span className="text-base font-extrabold text-[#122B52] dark:text-white">
+              <span
+                className={`text-base font-extrabold ${
+                  tempStatus !== 'NA' && Number(telemetry.tempInterior) > 36
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-[#122B52] dark:text-white'
+                }`}
+              >
                 {displayTempInt}
               </span>
             </div>
@@ -553,7 +587,13 @@ export default function DashboardView({
               <span className="block text-[10px] font-extrabold uppercase text-teal-600 dark:text-teal-400">
                 Exterior
               </span>
-              <span className="text-base font-extrabold text-[#122B52] dark:text-white">
+              <span
+                className={`text-base font-extrabold ${
+                  climaExteriorStatus !== 'NA' && Number(telemetry.tempExterior) > 36
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-[#122B52] dark:text-white'
+                }`}
+              >
                 {displayTempExt}
               </span>
             </div>
@@ -582,16 +622,20 @@ export default function DashboardView({
 
               {/* Filas Comparativas por cada intervalo de 10 minutos (orden cronológico reciente arriba) */}
               <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
-                {[...chartData].reverse().map((row, idx) => {
+                {reversedChartData.map((row, idx) => {
                   const intPct = Math.min(100, Math.max(0, (row.interior / 50) * 100));
                   const extPct = Math.min(100, Math.max(0, (row.exterior / 50) * 100));
-                  const isRowCritical = row.interior >= 36.1 || row.interior < 15.0;
+                  const isIntOver36 = row.interior > 36.0;
+                  const isExtOver36 = row.exterior > 36.0;
+                  const isRowCritical = isIntOver36 || row.interior < 15.0 || isExtOver36;
 
                   return (
                     <div
                       key={row.time + idx}
                       className={`p-3 rounded-2xl border transition-all ${
-                        idx === 0
+                        isIntOver36 || isExtOver36
+                          ? 'bg-red-50/70 dark:bg-red-950/35 border-red-300 dark:border-red-700 shadow-xs'
+                          : idx === 0
                           ? 'bg-amber-50/40 dark:bg-slate-800/90 border-amber-300/70 dark:border-amber-500/40 shadow-xs'
                           : 'bg-slate-50/60 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800'
                       }`}
@@ -614,7 +658,9 @@ export default function DashboardView({
                           {/* Barra Interior */}
                           <div className="space-y-0.5">
                             <div className="flex justify-between text-xs font-bold">
-                              <span className="text-amber-700 dark:text-amber-300">Interior</span>
+                              <span className={isIntOver36 ? 'text-red-600 dark:text-red-400 font-extrabold' : 'text-amber-700 dark:text-amber-300'}>
+                                Interior
+                              </span>
                               <span
                                 className={`font-extrabold ${
                                   isRowCritical
@@ -626,16 +672,16 @@ export default function DashboardView({
                               </span>
                             </div>
                             <div className="relative w-full h-3.5 bg-slate-200/80 dark:bg-slate-700 rounded-full overflow-hidden">
-                              {/* Línea guía de umbral crítico 36.1°C (72.2% de 50°C) */}
+                              {/* Línea guía de umbral crítico 36°C (72% de 50°C) */}
                               <div
-                                className="absolute top-0 bottom-0 w-[2px] bg-red-500/70 z-10"
-                                style={{ left: '72.2%' }}
-                                title="Umbral crítico 36.1°C"
+                                className="absolute top-0 bottom-0 w-[2px] bg-red-500/80 z-10"
+                                style={{ left: '72%' }}
+                                title="Umbral crítico 36°C"
                               />
                               <div
                                 className={`h-full rounded-full transition-all duration-500 ${
-                                  isRowCritical
-                                    ? 'bg-gradient-to-r from-red-500 to-rose-600'
+                                  isIntOver36 || row.interior < 15.0
+                                    ? 'bg-gradient-to-r from-red-500 to-red-600'
                                     : 'bg-gradient-to-r from-amber-500 to-[#D99B26]'
                                 }`}
                                 style={{ width: `${intPct}%` }}
@@ -646,14 +692,28 @@ export default function DashboardView({
                           {/* Barra Exterior */}
                           <div className="space-y-0.5">
                             <div className="flex justify-between text-xs font-bold">
-                              <span className="text-teal-700 dark:text-teal-300">Exterior</span>
-                              <span className="font-extrabold text-[#2A9D8F] dark:text-teal-400">
+                              <span className={isExtOver36 ? 'text-red-600 dark:text-red-400 font-extrabold' : 'text-teal-700 dark:text-teal-300'}>
+                                Exterior
+                              </span>
+                              <span
+                                className={`font-extrabold ${
+                                  isExtOver36 ? 'text-red-600 dark:text-red-400' : 'text-[#2A9D8F] dark:text-teal-400'
+                                }`}
+                              >
                                 {row.exterior.toFixed(1)}°C
                               </span>
                             </div>
-                            <div className="w-full h-3 bg-slate-200/80 dark:bg-slate-700 rounded-full overflow-hidden">
+                            <div className="relative w-full h-3 bg-slate-200/80 dark:bg-slate-700 rounded-full overflow-hidden">
                               <div
-                                className="h-full rounded-full bg-gradient-to-r from-teal-500 to-[#2A9D8F] transition-all duration-500"
+                                className="absolute top-0 bottom-0 w-[2px] bg-red-500/50 z-10"
+                                style={{ left: '72%' }}
+                              />
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  isExtOver36
+                                    ? 'bg-gradient-to-r from-red-500 to-red-600'
+                                    : 'bg-gradient-to-r from-teal-500 to-[#2A9D8F]'
+                                }`}
                                 style={{ width: `${extPct}%` }}
                               />
                             </div>
@@ -671,7 +731,7 @@ export default function DashboardView({
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   layout="vertical"
-                  data={[...chartData].reverse()}
+                  data={reversedChartData}
                   margin={{ top: 5, right: 18, left: 0, bottom: 5 }}
                 >
                   <CartesianGrid
@@ -694,13 +754,27 @@ export default function DashboardView({
                   />
                   <Tooltip
                     formatter={(val, name) => [
-                      `${Number(val).toFixed(1)} °C`,
+                      `${Number(val).toFixed(1)} °C${Number(val) > 36 ? ' (Pico > 36°C)' : ''}`,
                       name === 'interior' ? 'Temp. Interior' : 'Temp. Exterior',
                     ]}
                   />
-                  <ReferenceLine x={36.1} stroke="#ef4444" strokeDasharray="3 3" />
-                  <Bar dataKey="interior" fill="#D99B26" radius={[0, 6, 6, 0]} barSize={12} />
-                  <Bar dataKey="exterior" fill="#2A9D8F" radius={[0, 6, 6, 0]} barSize={12} />
+                  <ReferenceLine x={36} stroke="#ef4444" strokeDasharray="3 3" />
+                  <Bar dataKey="interior" radius={[0, 6, 6, 0]} barSize={12}>
+                    {reversedChartData.map((entry, index) => (
+                      <Cell
+                        key={`cell-int-${index}`}
+                        fill={entry.interior > 36 ? '#ef4444' : '#D99B26'}
+                      />
+                    ))}
+                  </Bar>
+                  <Bar dataKey="exterior" radius={[0, 6, 6, 0]} barSize={12}>
+                    {reversedChartData.map((entry, index) => (
+                      <Cell
+                        key={`cell-ext-${index}`}
+                        fill={entry.exterior > 36 ? '#ef4444' : '#2A9D8F'}
+                      />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -711,21 +785,42 @@ export default function DashboardView({
             2. VISTA DE ESCRITORIO (>= 768px): GRÁFICO DE ÁREA PANORÁMICO (Figura 2)
                - Eje X: Cada 10 minutos
                - Eje Y: De 5 en 5 hasta 50 grados
+               - Todo dato o pico sobre 36°C se pinta automáticamente en ROJO (#ef4444)
             ------------------------------------------------------------------ */}
         {!forceMobileView && (
           <div className="hidden md:block w-full h-[360px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
                 data={chartData}
-                margin={{ top: 10, right: 16, left: -12, bottom: 5 }}
+                margin={{ top: 18, right: 16, left: -12, bottom: 5 }}
               >
                 <defs>
+                  {/* Gradientes de trazo y relleno divididos dinámicamente en el umbral de 36°C */}
+                  <linearGradient id="strokeInteriorSplit" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#ef4444" />
+                    <stop offset={intSplits.strokeOffset} stopColor="#ef4444" />
+                    <stop offset={intSplits.strokeOffset} stopColor="#D99B26" />
+                    <stop offset="100%" stopColor="#D99B26" />
+                  </linearGradient>
+
                   <linearGradient id="gradInterior" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#D99B26" stopOpacity={0.42} />
+                    <stop offset="0%" stopColor="#ef4444" stopOpacity={0.5} />
+                    <stop offset={intSplits.fillOffset} stopColor="#ef4444" stopOpacity={0.38} />
+                    <stop offset={intSplits.fillOffset} stopColor="#D99B26" stopOpacity={0.42} />
                     <stop offset="95%" stopColor="#D99B26" stopOpacity={0.02} />
                   </linearGradient>
+
+                  <linearGradient id="strokeExteriorSplit" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#ef4444" />
+                    <stop offset={extSplits.strokeOffset} stopColor="#ef4444" />
+                    <stop offset={extSplits.strokeOffset} stopColor="#2A9D8F" />
+                    <stop offset="100%" stopColor="#2A9D8F" />
+                  </linearGradient>
+
                   <linearGradient id="gradExterior" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2A9D8F" stopOpacity={0.35} />
+                    <stop offset="0%" stopColor="#ef4444" stopOpacity={0.45} />
+                    <stop offset={extSplits.fillOffset} stopColor="#ef4444" stopOpacity={0.32} />
+                    <stop offset={extSplits.fillOffset} stopColor="#2A9D8F" stopOpacity={0.35} />
                     <stop offset="95%" stopColor="#2A9D8F" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
@@ -756,6 +851,20 @@ export default function DashboardView({
                   tickLine={false}
                 />
 
+                <ReferenceLine
+                  y={36}
+                  stroke="#ef4444"
+                  strokeDasharray="4 4"
+                  strokeWidth={1.5}
+                  label={{
+                    value: 'Umbral 36°C',
+                    position: 'insideTopRight',
+                    fill: '#ef4444',
+                    fontSize: 11,
+                    fontWeight: 700,
+                  }}
+                />
+
                 <Tooltip
                   contentStyle={{
                     backgroundColor: darkMode ? '#0f172a' : '#ffffff',
@@ -765,31 +874,106 @@ export default function DashboardView({
                     fontSize: '12px',
                     fontWeight: 600,
                   }}
-                  formatter={(value, name) => [
-                    `${Number(value).toFixed(1)} °C`,
-                    name === 'interior' ? 'Temp. Interior' : 'Temp. Exterior',
-                  ]}
+                  formatter={(value, name) => {
+                    const num = Number(value);
+                    const isOver = num > 36;
+                    return [
+                      <span style={{ color: isOver ? '#ef4444' : undefined, fontWeight: 800 }}>
+                        {num.toFixed(1)} °C {isOver ? '⚠️ (> 36°C)' : ''}
+                      </span>,
+                      name === 'interior' ? 'Temp. Interior' : 'Temp. Exterior',
+                    ];
+                  }}
                   labelFormatter={(label) => `Hora (Intervalo 10 min): ${label}`}
                 />
 
                 <Area
                   type="monotone"
                   dataKey="interior"
-                  stroke="#D99B26"
-                  strokeWidth={3}
+                  stroke="url(#strokeInteriorSplit)"
+                  strokeWidth={3.2}
                   fillOpacity={1}
                   fill="url(#gradInterior)"
-                  activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }}
+                  dot={(props) => {
+                    const { cx, cy, value, index } = props;
+                    const over = Number(value) > 36;
+                    return (
+                      <g key={`dot-int-${index}`}>
+                        <circle
+                          cx={cx}
+                          cy={cy}
+                          r={over ? 5.5 : 3.5}
+                          fill={over ? '#ef4444' : '#D99B26'}
+                          stroke="#ffffff"
+                          strokeWidth={1.8}
+                        />
+                        {over && (
+                          <text
+                            x={cx}
+                            y={cy - 10}
+                            textAnchor="middle"
+                            fill="#ef4444"
+                            fontSize={11}
+                            fontWeight={800}
+                          >
+                            {Number(value).toFixed(1)}°
+                          </text>
+                        )}
+                      </g>
+                    );
+                  }}
+                  activeDot={(props) => {
+                    const { cx, cy, value } = props;
+                    const over = Number(value) > 36;
+                    return (
+                      <circle
+                        cx={cx}
+                        cy={cy}
+                        r={6.5}
+                        fill={over ? '#ef4444' : '#D99B26'}
+                        stroke="#fff"
+                        strokeWidth={2}
+                      />
+                    );
+                  }}
                 />
 
                 <Area
                   type="monotone"
                   dataKey="exterior"
-                  stroke="#2A9D8F"
+                  stroke="url(#strokeExteriorSplit)"
                   strokeWidth={3}
                   fillOpacity={1}
                   fill="url(#gradExterior)"
-                  activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }}
+                  dot={(props) => {
+                    const { cx, cy, value, index } = props;
+                    const over = Number(value) > 36;
+                    return (
+                      <circle
+                        key={`dot-ext-${index}`}
+                        cx={cx}
+                        cy={cy}
+                        r={over ? 5.5 : 3.5}
+                        fill={over ? '#ef4444' : '#2A9D8F'}
+                        stroke="#ffffff"
+                        strokeWidth={1.8}
+                      />
+                    );
+                  }}
+                  activeDot={(props) => {
+                    const { cx, cy, value } = props;
+                    const over = Number(value) > 36;
+                    return (
+                      <circle
+                        cx={cx}
+                        cy={cy}
+                        r={6}
+                        fill={over ? '#ef4444' : '#2A9D8F'}
+                        stroke="#fff"
+                        strokeWidth={2}
+                      />
+                    );
+                  }}
                 />
               </AreaChart>
             </ResponsiveContainer>
